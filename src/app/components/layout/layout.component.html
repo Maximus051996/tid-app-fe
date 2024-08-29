@@ -1,0 +1,70 @@
+<nav class="navbar navbar-light bg-light">
+  <div class="container-fluid d-flex align-items-center">
+    <div class="d-flex align-items-center">
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="offcanvas"
+        data-bs-target="#offcanvasWithBothOptions"
+        aria-controls="offcanvasWithBothOptions"
+      >
+        <span class="navbar-toggler-icon" style="font-size: 1rem"></span>
+      </button>
+      <span class="ms-3 text-black fs-4">Task Investment Decision</span>
+    </div>
+  </div>
+</nav>
+
+<div
+  class="offcanvas offcanvas-start"
+  data-bs-scroll="true"
+  tabindex="-1"
+  id="offcanvasWithBothOptions"
+  aria-labelledby="offcanvasWithBothOptionsLabel"
+>
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="offcanvasWithBothOptionsLabel">
+      <button type="button" class="btn btn-primary position-relative">
+        Sayan Pramanick
+        <span
+          class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+          style="font-size: 0.75rem; padding: 0.5em 0.6em"
+        >
+          4
+        </span>
+      </button>
+    </h5>
+    <button
+      type="button"
+      class="btn-close text-reset"
+      data-bs-dismiss="offcanvas"
+      aria-label="Close"
+    ></button>
+  </div>
+  <div class="text-center">
+    <img
+      src="https://scontent-ccu1-1.xx.fbcdn.net/v/t39.30808-6/317265650_660118115766023_2534447728583088896_n.jpg?_nc_cat=107&ccb=1-7&_nc_sid=a5f93a&_nc_ohc=FBqQAwF4gtsQ7kNvgGGwklN&_nc_ht=scontent-ccu1-1.xx&oh=00_AYAyrmIdic4pxL20e8jNtFIX5KvVbcoRma5Kc9FSnnnmQA&oe=66D5EA25"
+      class="rounded"
+      style="width: 7rem"
+    />
+  </div>
+  <hr class="rounded" />
+
+  <div class="offcanvas-body">
+    <ul class="nav flex-column">
+      <li class="nav-item" *ngFor="let item of menuItems">
+        <a
+          [routerLink]="item.path"
+          class="nav-link bg-dark-subtle"
+          [routerLinkActive]="['active']"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          <i class="{{ item.icon }} fs-5"></i>
+          <span class="mx-3">{{ item.name }}</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<router-outlet />

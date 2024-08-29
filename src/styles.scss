@@ -1,1 +1,53 @@
 /* You can add global styles to this file, and also import other style files */
+/* Base font size settings */
+html {
+  font-size: 16px; /* Base font size (1rem = 16px) */
+}
+
+/* Responsive font sizes */
+body {
+  font-size: 1rem; /* Default font size */
+}
+
+/* Adjust font size for smaller devices */
+@media (max-width: 1199.98px) {
+  body {
+    font-size: 0.95rem; /* Slightly smaller font size for medium screens */
+  }
+}
+
+@media (max-width: 991.98px) {
+  body {
+    font-size: 0.9rem; /* Smaller font size for tablets */
+  }
+}
+
+@media (max-width: 767.98px) {
+  body {
+    font-size: 0.85rem; /* Even smaller font size for mobile phones */
+  }
+}
+
+/* Ensure specific elements scale accordingly */
+h1 {
+  font-size: 2.5rem; /* Example heading size */
+}
+
+h2 {
+  font-size: 2rem; /* Example heading size */
+}
+
+p {
+  font-size: 1rem; /* Example paragraph size */
+}
+
+/* Adjust heading sizes on smaller devices */
+@media (max-width: 767.98px) {
+  h1 {
+    font-size: 2rem; /* Adjusted heading size for small screens */
+  }
+
+  h2 {
+    font-size: 1.75rem; /* Adjusted heading size for small screens */
+  }
+}

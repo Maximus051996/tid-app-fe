@@ -57,3 +57,14 @@ html {
     text-align: center !important;
   }
 }
+
+.headerrl {
+  text-align: center; /* Centers the text */
+  background-color: #4caf50; /* Adds a background color (green in this case) */
+  color: white; /* Changes the text color to white */
+  display: inline-block; /* Ensures the h2 only takes up as much width as necessary */
+  margin: 0.6rem auto; /* Centers the element horizontally */
+  box-shadow: 0 0.1rem 0.1rem rgba(0, 0, 0, 0.1); /* Adds a subtle shadow for a more attractive look */
+  padding: 0.4rem 1rem; /* Adds some padding for better spacing */
+  border-radius: 0.5rem; /* Rounds the corners */
+}

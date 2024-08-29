@@ -1,12 +1,10 @@
 import { Component } from '@angular/core';
-
+import { NgxSpinnerModule } from 'ngx-spinner';
 @Component({
   selector: 'app-addedittask',
   standalone: true,
-  imports: [],
+  imports: [NgxSpinnerModule],
   templateUrl: './addedittask.component.html',
-  styleUrl: './addedittask.component.scss'
+  styleUrl: './addedittask.component.scss',
 })
-export class AddedittaskComponent {
-
-}
+export class AddedittaskComponent {}

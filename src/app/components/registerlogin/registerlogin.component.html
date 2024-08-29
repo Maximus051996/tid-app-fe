@@ -1,0 +1,169 @@
+<section class="background-radial-gradient overflow-hidden">
+  <ngx-spinner
+    bdColor="rgba(0, 0, 0, 0.8)"
+    size="medium"
+    color="#fff"
+    type="ball-atom"
+    [fullScreen]="true"
+    ><p style="color: white">Loading...</p></ngx-spinner
+  >
+  <div class="container px-4 py-5 px-md-5 text-center text-lg-start my-5">
+    <div class="row gx-lg-5 align-items-center">
+      <div class="col-lg-6 mb-5 mb-lg-0" style="z-index: 10">
+        <h1 class="my-5 display-5 fw-bold ls-tight text-primary">
+          Organize Your Tasks Efficiently <br />
+          <span class="text-secondary"
+            >And Maximize Your Investment Potential</span
+          >
+        </h1>
+        <p class="mb-4 opacity-70 text-white">
+          Managing your daily tasks shouldn't be a hassle, and neither should
+          planning your investments. With our intuitive platform, you can
+          streamline your to-do lists and stay on top of your investment
+          opportunities, all in one place. Whether you're tracking your project
+          deadlines, setting up reminders, or keeping an eye on market trends,
+          our tool helps you stay productive and financially savvy. Get the best
+          of both worlds—boost your productivity and make informed investment
+          decisions that drive growth. Start today and take control of your
+          tasks and investments!
+        </p>
+      </div>
+
+      <div class="col-lg-6 mb-5 mb-lg-0 position-relative">
+        <div class="card bg-glass">
+          <div class="card-body px-4 py-5 px-md-5">
+            <form [formGroup]="registerForm" *ngIf="isregister">
+              <h3 id="register" class="headerrl">Register Form</h3>
+              <div class="form-outline mb-4">
+                <label class="form-label" for="email">Email address</label>
+                <input
+                  type="email"
+                  id="email"
+                  class="form-control"
+                  formControlName="userEmail"
+                />
+                <p
+                  *ngIf="userEmail!.touched && userEmail!.invalid"
+                  class="text-danger"
+                >
+                  Email Address required.
+                </p>
+              </div>
+
+              <div class="form-outline mb-4">
+                <label class="form-label" for="phone">Phone</label>
+                <input
+                  type="text"
+                  id="phone"
+                  class="form-control"
+                  formControlName="phone"
+                />
+                <p *ngIf="phone!.touched && phone!.invalid" class="text-danger">
+                  Phone no required.
+                </p>
+              </div>
+
+              <div class="form-outline mb-4">
+                <label class="form-label" for="registeruserPassword"
+                  >Password</label
+                >
+                <input
+                  type="password"
+                  id="registeruserPassword"
+                  class="form-control"
+                  formControlName="registeruserPassword"
+                />
+                <p
+                  *ngIf="
+                    registeruserPassword!.touched &&
+                    registeruserPassword!.invalid
+                  "
+                  class="text-danger"
+                >
+                  Password required.
+                </p>
+              </div>
+              <div class="d-grid gap-2">
+                <button
+                  type="submit"
+                  class="btn btn-danger btn-lg btn-block"
+                  (click)="signUp()"
+                >
+                  Register
+                </button>
+                <button
+                  type="submit"
+                  class="btn btn-primary btn-lg btn-block"
+                  (click)="signIn()"
+                >
+                  Login
+                </button>
+              </div>
+            </form>
+            <form [formGroup]="loginForm" *ngIf="isLogin">
+              <h3 id="register" class="headerrl">Login Form</h3>
+              <div class="form-outline mb-4">
+                <label class="form-label" for="userName">Username</label>
+                <input
+                  type="text"
+                  id="userName"
+                  class="form-control"
+                  formControlName="userName"
+                />
+                <p
+                  *ngIf="userName!.touched && userName!.invalid"
+                  class="text-danger"
+                >
+                  Username required.
+                </p>
+              </div>
+
+              <div class="form-outline mb-4">
+                <label class="form-label" for="loginuserPassword"
+                  >Password</label
+                >
+                <input
+                  type="password"
+                  id="loginuserPassword"
+                  class="form-control"
+                  formControlName="loginuserPassword"
+                />
+                <p
+                  *ngIf="
+                    loginuserPassword!.touched && loginuserPassword!.invalid
+                  "
+                  class="text-danger"
+                >
+                  Password required.
+                </p>
+              </div>
+              <div class="d-grid gap-2">
+                <button
+                  type="submit"
+                  class="btn btn-primary btn-lg btn-block"
+                  (click)="signUp()"
+                >
+                  Register
+                </button>
+                <button
+                  type="submit"
+                  class="btn btn-danger btn-lg btn-block"
+                  (click)="signIn()"
+                >
+                  Login
+                </button>
+              </div>
+            </form>
+            <div
+              class="alert alert-success mt-2"
+              role="alert"
+              *ngIf="isMessage"
+            >
+              {{ message }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
