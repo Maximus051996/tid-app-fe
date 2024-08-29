@@ -4,7 +4,8 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UserService } from '../../services/user/user.service';
-import { NgxSpinnerModule, NgxSpinnerService } from 'ngx-spinner';
+import { NgxSpinnerModule } from 'ngx-spinner';
+import { AuthService } from '../../services/auth/auth.service';
 @Component({
   selector: 'app-registerlogin',
   standalone: true,
@@ -24,7 +25,7 @@ export class RegisterloginComponent {
     private formBuilder: FormBuilder,
     private router: Router,
     private userService: UserService,
-    private spinner: NgxSpinnerService
+    private authService: AuthService
   ) {
     this.registerForm = this.formBuilder.group({
       userEmail: ['', [Validators.required, Validators.email]],
@@ -44,7 +45,7 @@ export class RegisterloginComponent {
     this.isregister = true;
     this.isLogin = false;
     if (this.registerForm.valid) {
-      this.spinner.show();
+      this.authService.showSpinner();
       this;
       let registerDetails = {
         userName: this.registerForm.value.userEmail.split('@')[0],
@@ -61,7 +62,7 @@ export class RegisterloginComponent {
           this.isLogin = true;
           this.registerForm.reset();
           this.isMessage = false;
-          this.spinner.hide();
+          this.authService.hideSpinner();
         }, 2000);
       });
     }
@@ -71,7 +72,7 @@ export class RegisterloginComponent {
     this.isregister = false;
     this.isLogin = true;
     if (this.loginForm.valid) {
-      this.spinner.show();
+      this.authService.showSpinner();
       let loginDetails = {
         userName: this.loginForm.value.userName,
         userPassword: this.loginForm.value.loginuserPassword,
@@ -79,13 +80,16 @@ export class RegisterloginComponent {
       const responseObservable = this.userService.loginUser(loginDetails);
       responseObservable.subscribe(
         (res: any) => {
+          this.authService.setJwtToken(res.token);
           this.isMessage = true;
           this.message = 'Login Successful';
           setTimeout(() => {
             this.loginForm.reset();
             this.isMessage = false;
-            this.spinner.hide();
-          }, 3000);
+            this.authService.hideSpinner();
+            this.router.navigate(['taskinfo']);
+          }, 2000);
+          this.authService.autologOut();
         },
         (err) => {
           this.isMessage = true;
@@ -93,8 +97,8 @@ export class RegisterloginComponent {
           setTimeout(() => {
             this.loginForm.reset();
             this.isMessage = false;
-            this.spinner.hide();
-          }, 3000);
+            this.authService.hideSpinner();
+          }, 2000);
         }
       );
     }
