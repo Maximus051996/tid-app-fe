@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { UserService } from '../../services/user/user.service';
 import { NgxSpinnerModule } from 'ngx-spinner';
 import { AuthService } from '../../services/auth/auth.service';
+import { DataService } from '../../services/data/data.service';
 @Component({
   selector: 'app-registerlogin',
   standalone: true,
@@ -14,18 +15,17 @@ import { AuthService } from '../../services/auth/auth.service';
   styleUrl: './registerlogin.component.scss',
 })
 export class RegisterloginComponent {
-  message: any;
   registerForm: FormGroup;
   isLogin: boolean = true;
   isregister: boolean = false;
   loginForm: FormGroup;
-  isMessage: boolean = false;
   isLoader: boolean = false;
   constructor(
     private formBuilder: FormBuilder,
     private router: Router,
     private userService: UserService,
-    private authService: AuthService
+    private authService: AuthService,
+    private dataService: DataService
   ) {
     this.registerForm = this.formBuilder.group({
       userEmail: ['', [Validators.required, Validators.email]],
@@ -54,17 +54,24 @@ export class RegisterloginComponent {
         userPassword: this.registerForm.value.registeruserPassword,
       };
       const responseObservable = this.userService.registeruser(registerDetails);
-      responseObservable.subscribe((res: any) => {
-        this.isMessage = true;
-        this.message = res.message;
-        setTimeout(() => {
-          this.isregister = false;
-          this.isLogin = true;
-          this.registerForm.reset();
-          this.isMessage = false;
-          this.authService.hideSpinner();
-        }, 2000);
-      });
+      responseObservable.subscribe(
+        (res: any) => {
+          this.dataService.showSuccessToasterMsg(res.message);
+          setTimeout(() => {
+            this.isregister = false;
+            this.isLogin = true;
+            this.registerForm.reset();
+            this.authService.hideSpinner();
+          }, 2000);
+        },
+        (err) => {
+          this.dataService.showerrorToaster(err.message);
+          setTimeout(() => {
+            this.registerForm.reset();
+            this.authService.hideSpinner();
+          }, 2000);
+        }
+      );
     }
   }
 
@@ -81,22 +88,18 @@ export class RegisterloginComponent {
       responseObservable.subscribe(
         (res: any) => {
           this.authService.setJwtToken(res.token);
-          this.isMessage = true;
-          this.message = 'Login Successful';
+          this.dataService.showSuccessToasterMsg('Login Successful');
           setTimeout(() => {
             this.loginForm.reset();
-            this.isMessage = false;
             this.authService.hideSpinner();
             this.router.navigate(['taskinfo']);
           }, 2000);
           this.authService.autologOut();
         },
         (err) => {
-          this.isMessage = true;
-          this.message = err.message;
+          this.dataService.showerrorToaster(err.message);
           setTimeout(() => {
             this.loginForm.reset();
-            this.isMessage = false;
             this.authService.hideSpinner();
           }, 2000);
         }

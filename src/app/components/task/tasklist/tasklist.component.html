@@ -6,4 +6,115 @@
   [fullScreen]="true"
   ><p style="color: white">Loading...</p></ngx-spinner
 >
-<p>tasklist works!</p>
+<!-- list.component.html -->
+
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h6
+      class="bg-secondary-subtle p-3 border-start border-primary border-5 rounded-start rounded-end-4 d-flex align-items-center"
+    >
+      <i class="fa-solid fa-list-check me-2"></i>
+      Task Details
+    </h6>
+
+    <button
+      class="btn btn-md btn-outline-success d-flex align-items-center"
+      (click)="addItem()"
+    >
+      <i class="fa-solid fa-plus me-2"></i>
+      Add Task
+    </button>
+  </div>
+  <div class="d-flex justify-content-between align-items-center m-auto mb-4">
+    <div class="priority-block bg-danger text-white me-2">High</div>
+    <div class="priority-block bg-warning text-dark me-2">Medium</div>
+    <div class="priority-block bg-primary text-white me-2">Low</div>
+    <div class="priority-block bg-success text-white">Done</div>
+  </div>
+  <div class="input-group mb-4">
+    <span
+      class="input-group-text bg-secondary-subtle border-3"
+      id="search-icon"
+    >
+      <i class="fa-solid fa-magnifying-glass"></i>
+    </span>
+    <input
+      type="text"
+      class="form-control border-0 shadow-sm"
+      placeholder="Search items..."
+      [(ngModel)]="searchText"
+      aria-label="Search"
+      aria-describedby="search-icon"
+    />
+  </div>
+
+  <div class="row" *ngIf="filteredItems.length > 0">
+    <div
+      class="col-md-6 col-lg-4 mb-4"
+      *ngFor="
+        let item of filteredItems
+          | paginate : { itemsPerPage: itemsPerPage, currentPage: currentPage }
+      "
+    >
+      <div
+        class="card h-100"
+        [ngStyle]="{
+          opacity: item.isDeleted ? '0.6' : '1',
+          'pointer-events': item.isDeleted ? 'none' : 'auto'
+        }"
+        [ngClass]="getCardClass(item.priority, item.isDeleted)"
+      >
+        <div class="card-body">
+          <h5 class="card-title mb-3">{{ item.subject }}</h5>
+          <p class="card-text mb-2">{{ item.description }}</p>
+          <p
+            class="card-text mb-2 text-center text-white-100 text-bg-secondary rounded-4"
+            *ngIf="item.isDeleted"
+          >
+            Task Deleted
+          </p>
+          <p
+            class="card-text mb-2 text-center text-white-100 text-bg-success rounded-4"
+            *ngIf="item.isCompleted"
+          >
+            Task Completed
+          </p>
+          <p class="card-text text-muted">
+            <span class="fw-bold">Start Date:</span>
+            {{ item.startDate | date : "fullDate" }}
+          </p>
+        </div>
+        <div class="card-footer d-flex justify-content-between">
+          <button
+            class="btn btn-primary d-flex align-items-center"
+            (click)="editviewDetails(item._id, 'Edit')"
+          >
+            <i class="fa-solid fa-square-pen me-2"></i>
+            Edit
+          </button>
+          <button
+            class="btn btn-secondary d-flex align-items-center"
+            (click)="editviewDetails(item._id, 'View')"
+          >
+            <i class="fa-solid fa-list me-2"></i>
+            View
+          </button>
+          <button
+            class="btn btn-danger d-flex align-items-center"
+            (click)="deleteItem(item._id)"
+          >
+            <i class="fa-regular fa-trash-can me-2"></i>
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div *ngIf="filteredItems.length === 0" class="text-center">
+    <p>No tasks available.</p>
+  </div>
+
+  <pagination-controls
+    (pageChange)="currentPage = $event"
+  ></pagination-controls>
+</div>

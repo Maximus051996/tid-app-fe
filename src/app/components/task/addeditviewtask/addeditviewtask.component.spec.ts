@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { AddedittaskComponent } from './addedittask.component';
+import { AddeditviewtaskComponent } from './addeditviewtask.component';
 
-describe('AddedittaskComponent', () => {
-  let component: AddedittaskComponent;
-  let fixture: ComponentFixture<AddedittaskComponent>;
+describe('AddeditviewtaskComponent', () => {
+  let component: AddeditviewtaskComponent;
+  let fixture: ComponentFixture<AddeditviewtaskComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AddedittaskComponent]
+      imports: [AddeditviewtaskComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(AddedittaskComponent);
+    fixture = TestBed.createComponent(AddeditviewtaskComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

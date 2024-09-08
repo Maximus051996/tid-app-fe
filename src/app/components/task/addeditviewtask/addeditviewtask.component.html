@@ -1,0 +1,195 @@
+<ngx-spinner
+  bdColor="rgba(0, 0, 0, 0.8)"
+  size="medium"
+  color="#fff"
+  type="ball-atom"
+  [fullScreen]="true"
+  ><p style="color: white">Loading...</p></ngx-spinner
+>
+<div class="container mt-5">
+  <h2 class="mb-4 text-center">{{ operationHeader }}</h2>
+  <form [formGroup]="taskForm" (ngSubmit)="onSubmit()">
+    <!-- Subject and Priority in one row -->
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <label for="subject" class="form-label">
+          Subject <span class="text-danger">*</span>
+        </label>
+        <input
+          type="text"
+          id="subject"
+          class="form-control"
+          autocomplete="off"
+          formControlName="subject"
+          placeholder="Enter subject"
+          [ngClass]="{ 'disabled-input': isViewMode }"
+        />
+        <div
+          class="invalid-feedback d-block"
+          *ngIf="
+            taskForm?.get('subject')?.invalid &&
+            taskForm?.get('subject')?.touched
+          "
+        >
+          Subject is required.
+        </div>
+      </div>
+      <div class="col-md-6">
+        <label for="priority" class="form-label"
+          >Priority <span class="text-danger">*</span></label
+        >
+        <select
+          id="priority"
+          class="form-select"
+          formControlName="priority"
+          [ngClass]="{ 'disabled-input': isViewMode }"
+        >
+          <option *ngFor="let priority of priorities" [value]="priority">
+            {{ priority }}
+          </option>
+        </select>
+        <div
+          class="invalid-feedback d-block"
+          *ngIf="
+            taskForm?.get('priority')?.invalid &&
+            taskForm?.get('priority')?.touched
+          "
+        >
+          Priority is required.
+        </div>
+      </div>
+    </div>
+
+    <!-- Description taking whole row -->
+    <div class="mb-3">
+      <label for="description" class="form-label"
+        >Description <span class="text-danger">*</span></label
+      >
+      <textarea
+        id="description"
+        class="form-control"
+        formControlName="description"
+        autocomplete="off"
+        rows="4"
+        placeholder="Enter description"
+        [ngClass]="{ 'disabled-input': isViewMode }"
+      ></textarea>
+      <div
+        class="invalid-feedback d-block"
+        *ngIf="
+          taskForm?.get('description')?.invalid &&
+          taskForm?.get('description')?.touched
+        "
+      >
+        Description is required.
+      </div>
+    </div>
+
+    <!-- Start Date and End Date in one row -->
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <label for="startDate" class="form-label"
+          >Start Date <span class="text-danger">*</span></label
+        >
+        <input
+          type="datetime-local"
+          id="startDate"
+          class="form-control"
+          autocomplete="off"
+          formControlName="startDate"
+          [ngClass]="{ 'disabled-input': isViewMode }"
+        />
+        <div
+          class="invalid-feedback d-block"
+          *ngIf="
+            taskForm?.get('startDate')?.invalid &&
+            taskForm?.get('startDate')?.touched
+          "
+        >
+          Start Date is required.
+        </div>
+      </div>
+      <div class="col-md-6">
+        <label for="endDate" class="form-label"
+          >End Date <span class="text-danger">*</span></label
+        >
+        <input
+          type="datetime-local"
+          id="endDate"
+          autocomplete="off"
+          class="form-control"
+          formControlName="endDate"
+          [ngClass]="{ 'disabled-input': isViewMode }"
+        />
+        <div
+          class="invalid-feedback d-block"
+          *ngIf="
+            taskForm?.get('endDate')?.invalid &&
+            taskForm?.get('endDate')?.touched
+          "
+        >
+          End Date is required.
+        </div>
+      </div>
+    </div>
+
+    <!-- Checkboxes in one row -->
+    <div class="row mb-3">
+      <div class="col-md-4">
+        <div class="form-check">
+          <input
+            type="checkbox"
+            id="isRemainder"
+            class="form-check-input"
+            formControlName="isRemainder"
+            [ngClass]="{ 'disabled-input': isViewMode }"
+          />
+          <label class="form-check-label" for="isRemainder"
+            >Do you want to set remainder ?
+          </label>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="form-check">
+          <input
+            type="checkbox"
+            class="form-check-input"
+            id="isCompleted"
+            formControlName="isCompleted"
+            [ngClass]="{ 'disabled-input': isViewMode }"
+          />
+          <label class="form-check-label" for="isCompleted"
+            >Do you want to complete task ?</label
+          >
+        </div>
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="d-flex justify-content-between mt-4">
+      <button
+        type="submit"
+        class="btn btn-primary btn-custom"
+        *ngIf="!isViewMode"
+      >
+        Submit
+      </button>
+      <button
+        type="button"
+        class="btn btn-secondary btn-custom"
+        (click)="onReset()"
+        *ngIf="!isViewMode"
+      >
+        Reset
+      </button>
+      <button
+        type="button"
+        class="btn btn-danger btn-custom"
+        (click)="onCancel()"
+      >
+        Cancel
+      </button>
+    </div>
+  </form>
+</div>
