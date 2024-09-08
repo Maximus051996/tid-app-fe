@@ -1,0 +1,80 @@
+.container {
+  padding: 2rem;
+}
+
+h2 {
+  font-size: 2rem;
+  text-align: center;
+  color: #343a40;
+}
+
+.form-control,
+.form-select {
+  font-size: 1rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #ced4da;
+}
+
+.form-check-label {
+  margin-left: 0.5rem;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.col-md-6,
+.col-md-4 {
+  flex: 0 0 50%;
+  max-width: 50%;
+}
+
+@media (max-width: 768px) {
+  .col-md-6,
+  .col-md-4 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}
+
+.btn-custom {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+}
+
+.disabled-input {
+  pointer-events: none;
+  opacity: 0.6;
+  background-color: #e9ecef;
+  color: #343a40;
+}
+
+input[type="checkbox"].disabled-input {
+  position: relative;
+}
+
+input[type="checkbox"].disabled-input::before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: transparent;
+  border-radius: 2px;
+}
+
+input[type="checkbox"].disabled-input:checked::after {
+  content: "\2713"; /* Checkmark character */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  color: black; /* Black tick */
+  font-size: 14px; /* Adjust based on checkbox size */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 1;
+}

@@ -5,7 +5,7 @@ hr.rounded {
 /* Active link styling */
 .nav-link.active {
   font-weight: 600; /* Bold font weight */
-  color: #5b80c0; /* Text color for active link */
+  color: #1d2b24; /* Text color for active link */
   background-color: #5da799; /* Background color for active link */
   border-radius: 1rem; /* Increased border radius for a more rounded look */
 }
@@ -16,7 +16,7 @@ hr.rounded {
   padding: 1rem 1.5rem; /* Increased padding for a larger clickable area */
   border-radius: 1rem; /* Rounded corners */
   transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transitions */
-  color: #333; /* Default text color */
+  color: #1d2b24; /* Default text color */
   text-decoration: none; /* Remove underline */
 }
 
@@ -24,8 +24,8 @@ hr.rounded {
 /* Hover effect with specific color */
 .nav-link:hover {
   box-shadow: 0 0.5rem 1rem rgba(9, 46, 7, 0.2); /* Enhanced shadow effect on hover */
-  background-color: #9786a4 !important; /* Light blue background on hover */
-  color: #333; /* Ensure text color remains readable */
+  background-color: #1f9579 !important; /* Light blue background on hover */
+  color: #1d2b24; /* Ensure text color remains readable */
 }
 
 /* Spacing between items */

@@ -6,15 +6,15 @@ export const authGuardGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
   if (authService.getJwtToken()) {
-    console.log('true');
-    console.log(state.url);
+    //console.log('true');
+    // console.log(state.url);
     if (state.url === '/register-login') {
       router.navigate(['/taskinfo']);
     }
     return true;
   } else {
     router.navigate(['/register-login']);
-    console.log('false');
+    //console.log('false');
     return false;
   }
 };
