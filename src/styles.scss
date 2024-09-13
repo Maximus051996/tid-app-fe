@@ -50,4 +50,20 @@ p {
   h2 {
     font-size: 1.75rem; /* Adjusted heading size for small screens */
   }
+} /* For the scrollbar track */
+::-webkit-scrollbar {
+  width: 12px; /* Width of the scrollbar */
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1; /* Color of the track */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #dad8d8; /* Color of the thumb */
+  border-radius: 10px; /* Rounded corners of the thumb */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4e8b5b; /* Color of the thumb on hover */
 }
