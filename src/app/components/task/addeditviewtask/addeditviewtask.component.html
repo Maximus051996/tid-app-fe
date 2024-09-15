@@ -135,9 +135,51 @@
     </div>
 
     <!-- Checkboxes in one row -->
-    <div class="row mb-3">
-      <div class="col-md-4">
+    <div class="row mb-3 d-flex justify-content-between">
+      <!-- Task Status (left side) -->
+      <div class="col-md-6">
+        <label class="form-label">Task Status</label>
         <div class="form-check">
+          <input
+            type="radio"
+            class="form-check-input"
+            id="notStarted"
+            formControlName="taskStatus"
+            value="notStarted"
+            [ngClass]="{ 'disabled-input': isViewMode }"
+          />
+          <label class="form-check-label" for="notStarted">Not Started</label>
+        </div>
+        <div class="form-check">
+          <input
+            type="radio"
+            class="form-check-input"
+            id="partiallyCompleted"
+            formControlName="taskStatus"
+            value="partiallyCompleted"
+            [ngClass]="{ 'disabled-input': isViewMode }"
+          />
+          <label class="form-check-label" for="partiallyCompleted"
+            >Partially Completed</label
+          >
+        </div>
+        <div class="form-check">
+          <input
+            type="radio"
+            class="form-check-input"
+            id="completed"
+            formControlName="taskStatus"
+            value="completed"
+            [ngClass]="{ 'disabled-input': isViewMode }"
+          />
+          <label class="form-check-label" for="completed">Completed</label>
+        </div>
+      </div>
+
+      <!-- Checkboxes (right side) -->
+      <div class="col-md-6 d-flex flex-column align-items-start">
+        <!-- Remainder Checkbox -->
+        <div class="form-check mb-2">
           <input
             type="checkbox"
             id="isRemainder"
@@ -145,28 +187,12 @@
             formControlName="isRemainder"
             [ngClass]="{ 'disabled-input': isViewMode }"
           />
-          <label class="form-check-label" for="isRemainder"
-            >Do you want to set remainder ?
+          <label class="form-check-label" for="isRemainder">
+            Do you want to set reminder?
           </label>
         </div>
-      </div>
 
-      <div class="col-md-4">
-        <div class="form-check">
-          <input
-            type="checkbox"
-            class="form-check-input"
-            id="isCompleted"
-            formControlName="isCompleted"
-            [ngClass]="{ 'disabled-input': isViewMode }"
-          />
-          <label class="form-check-label" for="isCompleted"
-            >Do you want to complete task ?</label
-          >
-        </div>
-      </div>
-
-      <div class="col-md-4">
+        <!-- Sub-Task Checkbox -->
         <div class="form-check">
           <input
             type="checkbox"
@@ -176,9 +202,9 @@
             [checked]="isVisiblesub_taskflag"
             [ngClass]="{ 'disabled-input': isViewMode }"
           />
-          <label class="form-check-label" for="isSubTask"
-            >Do you want to add sub-task ?</label
-          >
+          <label class="form-check-label" for="isSubTask">
+            Do you want to add a sub-task?
+          </label>
         </div>
       </div>
     </div>
@@ -188,11 +214,12 @@
         <div class="d-flex justify-content-end">
           <button
             type="button"
+            *ngIf="!isViewMode"
             class="btn btn-outline-dark btn-custom"
             style="padding: 0.5rem 1rem; font-size: 1rem"
             (click)="addRow()"
           >
-            <i class="fa-brands fa-git-alt"></i>
+            <i class="fa-solid fa-shuffle"></i>
             Add Subtask
           </button>
         </div>
@@ -221,6 +248,15 @@
               placeholder="Enter subtask"
               [ngClass]="{ 'disabled-input': isViewMode }"
             />
+            <button
+              type="button"
+              class="btn btn-outline-danger"
+              (click)="removeSubtask(i)"
+              *ngIf="!isViewMode"
+              style="margin-left: 0.5rem"
+            >
+              <i class="fa-regular fa-square-minus"></i>
+            </button>
           </div>
         </div>
       </div>

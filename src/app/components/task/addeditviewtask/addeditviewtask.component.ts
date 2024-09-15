@@ -73,7 +73,7 @@ export class AddeditviewtaskComponent implements OnInit {
       endDate: ['', Validators.required],
       isRemainder: [false],
       isDeleted: [false],
-      isCompleted: [false],
+      taskStatus: ['notStarted', Validators.required],
       subtasks: this.fb.array([]),
     });
   }
@@ -81,8 +81,12 @@ export class AddeditviewtaskComponent implements OnInit {
   onSubmit(): void {
     if (this.taskForm.invalid) {
       return;
+    } else if (this.taskForm.value.startDate > this.taskForm.value.endDate) {
+      this.dataService.showerrorToaster(
+        'End Date should be greater than Start Date'
+      );
+      return;
     }
-
     const {
       subject,
       description,
@@ -90,7 +94,7 @@ export class AddeditviewtaskComponent implements OnInit {
       startDate,
       endDate,
       isRemainder,
-      isCompleted,
+      taskStatus,
       subtasks,
     } = this.taskForm.value;
 
@@ -100,6 +104,7 @@ export class AddeditviewtaskComponent implements OnInit {
     let jsonData: any = {
       description,
       priority,
+      startDate,
       endDate,
       subtasks: formattedSubtasks,
     };
@@ -113,9 +118,10 @@ export class AddeditviewtaskComponent implements OnInit {
         endDate,
         isRemainder,
         subtasks: formattedSubtasks,
+        taskStatus,
       };
     } else {
-      jsonData = { ...jsonData, isRemainder, isCompleted };
+      jsonData = { ...jsonData, isRemainder, taskStatus };
     }
 
     this.authService.showSpinner();
@@ -162,7 +168,7 @@ export class AddeditviewtaskComponent implements OnInit {
             endDate: this.formatDateToInput(new Date(task.endDate)),
             isRemainder: task.isRemainder,
             isDeleted: task.isDeleted,
-            isCompleted: task.isCompleted,
+            taskStatus: task.taskStatus,
           });
           const subtasksArray = this.taskForm.get('subtasks') as FormArray;
           subtasksArray.clear(); // Clear any existing subtasks
@@ -238,5 +244,9 @@ export class AddeditviewtaskComponent implements OnInit {
       this.dataService.showerrorToaster('Enter or tab key is not allowed');
       event.preventDefault();
     }
+  }
+
+  removeSubtask(index: number): void {
+    this.subtasks.removeAt(index);
   }
 }

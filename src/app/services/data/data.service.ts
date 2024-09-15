@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
-import { Subject } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -8,14 +8,12 @@ import { Subject } from 'rxjs';
 export class DataService {
   constructor(private toastr: ToastrService) {}
 
-  private subject = new Subject<string>();
-
-  // Observable stream
-  data$ = this.subject.asObservable();
+  private dataSource = new BehaviorSubject<number>(0); // Initialize with a default value
+  currentData = this.dataSource.asObservable(); // Expose the observable
 
   // Method to emit data
-  sendData(message: string) {
-    this.subject.next(message);
+  changeData(data: number) {
+    this.dataSource.next(data); // Update the value in the BehaviorSubject
   }
 
   showSuccessToasterMsg(message: any) {

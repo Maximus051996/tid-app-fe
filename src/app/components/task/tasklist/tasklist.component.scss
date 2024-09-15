@@ -2,6 +2,7 @@
   transition: transform 0.3s ease;
   border-radius: 0.75rem; /* Rounded corners */
   overflow: hidden;
+  position: relative;
 }
 
 .card:hover {
@@ -70,6 +71,8 @@
 
 .card-body {
   padding: 1.5rem;
+  position: relative;
+  z-index: 2; /* Ensure content is above the belt */
 }
 
 .card-footer {
@@ -114,4 +117,41 @@
 
 .priority-block:not(:last-child) {
   margin-right: 0.5rem;
+}
+
+.chart-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.5rem; /* Space between the status text and the indicator */
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  background-color: #28a745; /* Green color */
+  border-radius: 50%; /* Make it round */
+  display: inline-block;
+  animation: pulse 1s infinite; /* Apply the pulse animation */
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.5); /* Scale up */
+    opacity: 0.5; /* Slightly fade out */
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
