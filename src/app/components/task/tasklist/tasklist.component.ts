@@ -201,7 +201,7 @@ export class TasklistComponent implements OnInit {
             ['Low', this.lowpriority],
           ],
           innerSize: '50%', // Creates a donut chart
-          colors: ['#FF5733', '#FFC300', '#33FF57'], // Custom colors for segments
+          colors: ['#FF5733', '#FFC300', '#6495ED'], // Custom colors for segments
           dataLabels: {
             enabled: true,
             format: '{point.name}: {point.percentage:.1f}%', // Show percentage with one decimal place
