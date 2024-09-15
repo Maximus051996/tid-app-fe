@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import {
+  FormArray,
   FormBuilder,
   FormGroup,
   ReactiveFormsModule,
@@ -19,7 +20,7 @@ import { DataService } from '../../../services/data/data.service';
   templateUrl: './addeditviewtask.component.html',
   styleUrl: './addeditviewtask.component.scss',
 })
-export class AddeditviewtaskComponent {
+export class AddeditviewtaskComponent implements OnInit {
   taskForm!: FormGroup;
   operationHeader: string = '';
   priorities: string[] = ['Low', 'Medium', 'High'];
@@ -72,15 +73,20 @@ export class AddeditviewtaskComponent {
       endDate: ['', Validators.required],
       isRemainder: [false],
       isDeleted: [false],
-      isCompleted: [false],
+      taskStatus: ['notStarted', Validators.required],
+      subtasks: this.fb.array([]),
     });
   }
 
   onSubmit(): void {
     if (this.taskForm.invalid) {
       return;
+    } else if (this.taskForm.value.startDate > this.taskForm.value.endDate) {
+      this.dataService.showerrorToaster(
+        'End Date should be greater than Start Date'
+      );
+      return;
     }
-
     const {
       subject,
       description,
@@ -88,9 +94,20 @@ export class AddeditviewtaskComponent {
       startDate,
       endDate,
       isRemainder,
-      isCompleted,
+      taskStatus,
+      subtasks,
     } = this.taskForm.value;
-    let jsonData: any = { description, priority, endDate };
+
+    // Transform subtasks to an array of strings
+    const formattedSubtasks = subtasks.map((subtask: any) => subtask.subtask);
+
+    let jsonData: any = {
+      description,
+      priority,
+      startDate,
+      endDate,
+      subtasks: formattedSubtasks,
+    };
 
     if (!this.taskId) {
       jsonData = {
@@ -100,9 +117,11 @@ export class AddeditviewtaskComponent {
         startDate,
         endDate,
         isRemainder,
+        subtasks: formattedSubtasks,
+        taskStatus,
       };
     } else {
-      jsonData = { ...jsonData, isRemainder, isCompleted };
+      jsonData = { ...jsonData, isRemainder, taskStatus };
     }
 
     this.authService.showSpinner();
@@ -119,6 +138,7 @@ export class AddeditviewtaskComponent {
       error: (err) => {
         console.error('Error: ', err);
         this.dataService.showerrorToaster('Failed to process task');
+        this.authService.hideSpinner();
       },
       complete: () => {
         this.authService.hideSpinner();
@@ -131,6 +151,15 @@ export class AddeditviewtaskComponent {
     this.taskService.gettaskbyId(id).subscribe(
       (task) => {
         if (task) {
+          const formattedSubtasks = task.subtasks
+            ? task.subtasks.map((subtask: string) => ({
+                subtask,
+              }))
+            : [];
+
+          this.isVisiblesub_taskflag =
+            formattedSubtasks.length > 0 ? true : false;
+
           this.taskForm.patchValue({
             subject: task.subject,
             description: task.description,
@@ -139,8 +168,19 @@ export class AddeditviewtaskComponent {
             endDate: this.formatDateToInput(new Date(task.endDate)),
             isRemainder: task.isRemainder,
             isDeleted: task.isDeleted,
-            isCompleted: task.isCompleted,
+            taskStatus: task.taskStatus,
           });
+          const subtasksArray = this.taskForm.get('subtasks') as FormArray;
+          subtasksArray.clear(); // Clear any existing subtasks
+
+          formattedSubtasks.forEach((subtask: any) => {
+            subtasksArray.push(
+              this.fb.group({
+                subtask: [subtask.subtask],
+              })
+            );
+          });
+
           this.authService.hideSpinner();
         }
       },
@@ -181,5 +221,32 @@ export class AddeditviewtaskComponent {
     )}-${pad(adjustedDate.getDate())}T${pad(adjustedDate.getHours())}:${pad(
       adjustedDate.getMinutes()
     )}`;
+  }
+
+  get subtasks(): FormArray {
+    return this.taskForm.get('subtasks') as FormArray;
+  }
+
+  addRow() {
+    this.subtasks.push(
+      this.fb.group({
+        subtask: [''],
+      })
+    );
+  }
+  isVisiblesub_taskflag: boolean = false;
+  isVisbleSubtask($event: any) {
+    this.isVisiblesub_taskflag = $event.target.checked;
+  }
+
+  onKeyDown(event: KeyboardEvent) {
+    if (event.key === 'Enter' || event.key === 'Tab') {
+      this.dataService.showerrorToaster('Enter or tab key is not allowed');
+      event.preventDefault();
+    }
+  }
+
+  removeSubtask(index: number): void {
+    this.subtasks.removeAt(index);
   }
 }

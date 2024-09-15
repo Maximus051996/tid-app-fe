@@ -51,6 +51,13 @@ h2 {
   color: #343a40;
 }
 
+.disabled-input-text {
+  pointer-events: none;
+  opacity: 0.6;
+  background-color: #e9ecef;
+  color: #343a40;
+}
+
 input[type="checkbox"].disabled-input {
   position: relative;
 }
