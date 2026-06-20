@@ -1,0 +1,153 @@
+<div class="page help-page">
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-glow" aria-hidden="true"></div>
+    <div class="hero-inner">
+      <app-brand-logo class="hero-logo" [size]="72" [animated]="true"></app-brand-logo>
+      <span class="hero-eyebrow">
+        <i class="fa-solid fa-life-ring"></i>
+        Help &amp; documentation
+      </span>
+      <h1>Everything you need, in one place.</h1>
+      <p class="hero-lede">
+        A guided tour of every module, plus downloadable docs you can keep offline as a PDF.
+      </p>
+
+      <div class="hero-meta">
+        <div class="hm-pill">
+          <span class="hm-k">Version</span>
+          <span class="hm-v">v{{ version }}</span>
+        </div>
+        <div class="hm-pill">
+          <span class="hm-k">Released</span>
+          <span class="hm-v">{{ releaseDate }}</span>
+        </div>
+        <div class="hm-pill author">
+          <span class="hm-k">Crafted by</span>
+          <span class="hm-v">{{ author }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Doc download cards -->
+  <section class="section">
+    <header class="section-head">
+      <span class="section-eyebrow">Documentation</span>
+      <h2>Download &amp; print</h2>
+      <p>Open either doc in a new tab. Print to PDF for an offline copy.</p>
+    </header>
+
+    <div class="doc-row">
+      <button type="button" class="doc-card" (click)="open(userGuide)">
+        <span class="doc-icon" data-tone="accent">
+          <i class="fa-solid fa-book-open"></i>
+        </span>
+        <div class="doc-text">
+          <strong>User Guide</strong>
+          <span>Step-by-step instructions for every module — from sign-in to advanced AI commands.</span>
+          <span class="doc-meta">
+            <span class="doc-chip"><i class="fa-solid fa-file-lines"></i> HTML</span>
+            <span class="doc-chip"><i class="fa-solid fa-print"></i> Printable</span>
+            <span class="doc-chip"><i class="fa-solid fa-circle-check"></i> Save as PDF</span>
+          </span>
+        </div>
+        <span class="doc-cta" aria-hidden="true">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i>
+        </span>
+      </button>
+
+      <button type="button" class="doc-card" (click)="open(releaseNotes)">
+        <span class="doc-icon" data-tone="info">
+          <i class="fa-solid fa-rocket"></i>
+        </span>
+        <div class="doc-text">
+          <strong>Release Notes — v{{ version }}</strong>
+          <span>What's new, what changed, and what was removed in this release.</span>
+          <span class="doc-meta">
+            <span class="doc-chip"><i class="fa-solid fa-tag"></i> {{ releaseName }}</span>
+            <span class="doc-chip"><i class="fa-regular fa-calendar"></i> {{ releaseDate }}</span>
+          </span>
+        </div>
+        <span class="doc-cta" aria-hidden="true">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i>
+        </span>
+      </button>
+    </div>
+
+    <div class="pdf-tip">
+      <span class="pdf-tip-icon"><i class="fa-solid fa-file-pdf"></i></span>
+      <div>
+        <strong>Want a PDF copy?</strong>
+        Open either doc above, then press <kbd>Ctrl</kbd>+<kbd>P</kbd> (or <kbd>⌘</kbd>+<kbd>P</kbd> on Mac)
+        and choose <em>Save as PDF</em>.
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick-start steps -->
+  <section class="section">
+    <header class="section-head">
+      <span class="section-eyebrow">Get started in 5 steps</span>
+      <h2>Quick start</h2>
+      <p>The fastest path to feeling productive on day one.</p>
+    </header>
+    <ol class="step-list">
+      <li *ngFor="let s of quickSteps" class="step-card" [attr.data-tone]="s.tone">
+        <span class="step-icon"><i [class]="s.icon"></i></span>
+        <div class="step-text">
+          <strong>{{ s.title }}</strong>
+          <span>{{ s.detail }}</span>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- Per-module reference -->
+  <section class="section">
+    <header class="section-head">
+      <span class="section-eyebrow">Reference</span>
+      <h2>Module cheat sheet</h2>
+      <p>One card per module — open any of these from the sidebar.</p>
+    </header>
+    <div class="module-grid">
+      <article *ngFor="let m of visibleModules" class="module-card" [attr.data-tone]="m.tone">
+        <header>
+          <span class="m-icon"><i [class]="m.icon"></i></span>
+          <div class="m-titles">
+            <strong>{{ m.title }}</strong>
+            <span>{{ m.detail }}</span>
+          </div>
+        </header>
+        <ul>
+          <li *ngFor="let st of m.steps">
+            <i class="fa-solid fa-check"></i>
+            <span>{{ st }}</span>
+          </li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <!-- Tips -->
+  <section class="section">
+    <header class="section-head">
+      <span class="section-eyebrow">Power user</span>
+      <h2>Tips &amp; shortcuts</h2>
+      <p>Small details that pay off the more you use the app.</p>
+    </header>
+    <div class="tip-grid">
+      <article *ngFor="let t of tips" class="tip-card">
+        <header>
+          <span class="t-icon"><i [class]="t.icon"></i></span>
+          <strong>{{ t.title }}</strong>
+        </header>
+        <ul>
+          <li *ngFor="let line of t.lines">
+            <code>{{ line }}</code>
+          </li>
+        </ul>
+      </article>
+    </div>
+  </section>
+</div>

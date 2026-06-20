@@ -1,0 +1,422 @@
+<!-- Floating bubble -->
+<button
+  *ngIf="!open"
+  class="fab"
+  type="button"
+  (click)="togglePanel()"
+  aria-label="Open AI assistant"
+>
+  <span class="fab-orb">
+    <svg class="ai-orb" viewBox="0 0 64 64" aria-hidden="true">
+      <defs>
+        <radialGradient [attr.id]="'fab-core-' + uid" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#a78bfa" />
+          <stop offset="55%" stop-color="#6d28d9" />
+          <stop offset="100%" stop-color="#1e0a4a" />
+        </radialGradient>
+        <radialGradient [attr.id]="'fab-glow-' + uid" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#c4b5fd" stop-opacity="0.85" />
+          <stop offset="60%" stop-color="#7c3aed" stop-opacity="0.35" />
+          <stop offset="100%" stop-color="#7c3aed" stop-opacity="0" />
+        </radialGradient>
+      </defs>
+
+      <!-- Outer halo glow -->
+      <circle class="orb-halo" cx="32" cy="32" r="30" [attr.fill]="'url(#fab-glow-' + uid + ')'" />
+      <!-- Plasma core -->
+      <circle class="orb-core" cx="32" cy="32" r="22" [attr.fill]="'url(#fab-core-' + uid + ')'" />
+
+      <!-- Energy filaments (clipped to the core) -->
+      <clipPath [attr.id]="'fab-clip-' + uid">
+        <circle cx="32" cy="32" r="22" />
+      </clipPath>
+      <g [attr.clip-path]="'url(#fab-clip-' + uid + ')'" class="orb-filaments">
+        <path class="filament f1" d="M 8 32 Q 24 18, 32 30 T 56 30" />
+        <path class="filament f2" d="M 8 38 Q 22 50, 32 38 T 56 38" />
+        <path class="filament f3" d="M 8 26 Q 26 14, 32 26 T 56 22" />
+        <path class="filament f4" d="M 8 44 Q 22 36, 32 44 T 56 46" />
+        <path class="filament f5" d="M 12 20 Q 28 28, 36 20 T 58 18" />
+        <path class="filament f6" d="M 6 48 Q 22 42, 30 50 T 54 52" />
+      </g>
+
+      <!-- Rotating swirl ring inside the core -->
+      <g [attr.clip-path]="'url(#fab-clip-' + uid + ')'" class="orb-swirl">
+        <ellipse cx="32" cy="32" rx="20" ry="6" />
+        <ellipse cx="32" cy="32" rx="14" ry="20" />
+      </g>
+
+      <!-- Bright core highlight -->
+      <circle class="orb-shine" cx="32" cy="32" r="6" />
+
+      <!-- Hot spots on the rim -->
+      <circle class="orb-hotspot hs-left" cx="10" cy="32" r="2" />
+      <circle class="orb-hotspot hs-right" cx="54" cy="32" r="2" />
+    </svg>
+    <span class="ring ring-1"></span>
+    <span class="ring ring-2"></span>
+  </span>
+  <span class="fab-text" *ngIf="hasPending(); else idleHint">
+    <strong>{{ pendingCount() }}</strong> pending
+  </span>
+  <ng-template #idleHint>
+    <span class="fab-text">Ask AI</span>
+  </ng-template>
+  <span class="fab-badge" *ngIf="unread > 0">{{ unread }}</span>
+</button>
+
+<!-- Panel -->
+<aside
+  class="panel"
+  [class.open]="open"
+  role="dialog"
+  aria-label="AI assistant"
+  aria-modal="false"
+>
+  <!-- Header -->
+  <header class="panel-head">
+    <div class="bot">
+      <div class="bot-avatar">
+        <svg class="ai-orb" viewBox="0 0 64 64" aria-hidden="true">
+          <defs>
+            <radialGradient [attr.id]="'av-core-' + uid" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#a78bfa" />
+              <stop offset="55%" stop-color="#6d28d9" />
+              <stop offset="100%" stop-color="#1e0a4a" />
+            </radialGradient>
+            <radialGradient [attr.id]="'av-glow-' + uid" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#c4b5fd" stop-opacity="0.85" />
+              <stop offset="60%" stop-color="#7c3aed" stop-opacity="0.35" />
+              <stop offset="100%" stop-color="#7c3aed" stop-opacity="0" />
+            </radialGradient>
+          </defs>
+
+          <circle class="orb-halo" cx="32" cy="32" r="30" [attr.fill]="'url(#av-glow-' + uid + ')'" />
+          <circle class="orb-core" cx="32" cy="32" r="22" [attr.fill]="'url(#av-core-' + uid + ')'" />
+
+          <clipPath [attr.id]="'av-clip-' + uid">
+            <circle cx="32" cy="32" r="22" />
+          </clipPath>
+          <g [attr.clip-path]="'url(#av-clip-' + uid + ')'" class="orb-filaments">
+            <path class="filament f1" d="M 8 32 Q 24 18, 32 30 T 56 30" />
+            <path class="filament f2" d="M 8 38 Q 22 50, 32 38 T 56 38" />
+            <path class="filament f3" d="M 8 26 Q 26 14, 32 26 T 56 22" />
+            <path class="filament f4" d="M 8 44 Q 22 36, 32 44 T 56 46" />
+            <path class="filament f5" d="M 12 20 Q 28 28, 36 20 T 58 18" />
+            <path class="filament f6" d="M 6 48 Q 22 42, 30 50 T 54 52" />
+          </g>
+
+          <g [attr.clip-path]="'url(#av-clip-' + uid + ')'" class="orb-swirl">
+            <ellipse cx="32" cy="32" rx="20" ry="6" />
+            <ellipse cx="32" cy="32" rx="14" ry="20" />
+          </g>
+
+          <circle class="orb-shine" cx="32" cy="32" r="6" />
+
+          <circle class="orb-hotspot hs-left" cx="10" cy="32" r="2" />
+          <circle class="orb-hotspot hs-right" cx="54" cy="32" r="2" />
+        </svg>
+      </div>
+      <div class="bot-meta">
+        <span class="bot-name">TID Assistant</span>
+        <span class="bot-status">
+          <ng-container *ngIf="thinking; else idleText">
+            <span class="typing"><span></span><span></span><span></span></span>
+            Thinking…
+          </ng-container>
+          <ng-template #idleText>
+            <span class="dot" [class.off]="!settings.autoScan"></span>
+            <ng-container *ngIf="settings.autoScan; else off">
+              Online · checks every {{ settings.intervalMinutes }} min
+            </ng-container>
+            <ng-template #off>Auto-scan paused</ng-template>
+          </ng-template>
+        </span>
+      </div>
+    </div>
+    <div class="panel-actions">
+      <button
+        class="ghost"
+        type="button"
+        (click)="briefMe()"
+        title="Daily briefing"
+        aria-label="Daily briefing"
+      >
+        <i class="fa-solid fa-sun"></i>
+      </button>
+      <button
+        class="ghost danger-icon"
+        type="button"
+        (click)="clearChat()"
+        [disabled]="!messages.length"
+        title="Clear chat"
+        aria-label="Clear chat"
+      >
+        <i class="fa-solid fa-trash-can"></i>
+      </button>
+      <button
+        class="ghost"
+        type="button"
+        (click)="toggleSettings()"
+        title="Settings"
+        aria-label="Assistant settings"
+        [class.active]="showSettings"
+      >
+        <i class="fa-solid fa-gear"></i>
+      </button>
+      <button class="ghost" type="button" (click)="closePanel()" title="Close" aria-label="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Settings drawer (slides down from the header) -->
+  <section class="settings" *ngIf="showSettings" role="region" aria-label="Assistant settings">
+    <div class="settings-title">
+      <i class="fa-solid fa-sliders"></i>
+      <span>Assistant settings</span>
+    </div>
+
+    <div class="settings-row">
+      <div class="setting">
+        <span class="setting-label">Auto-scan</span>
+        <span class="setting-help">Periodically check for pending tasks</span>
+      </div>
+      <button
+        type="button"
+        class="switch"
+        [class.on]="settings.autoScan"
+        (click)="toggleAutoScan()"
+        [attr.aria-pressed]="settings.autoScan"
+        aria-label="Toggle auto-scan"
+      >
+        <span class="thumb"></span>
+      </button>
+    </div>
+
+    <div class="settings-row" *ngIf="settings.autoScan">
+      <div class="setting">
+        <span class="setting-label">Interval</span>
+        <span class="setting-help">How often to check</span>
+      </div>
+      <div class="interval-pills">
+        <button
+          type="button"
+          *ngFor="let m of [15, 30, 60]"
+          class="interval-pill"
+          [class.active]="settings.intervalMinutes === m"
+          (click)="setInterval(m)"
+        >{{ m }}m</button>
+      </div>
+    </div>
+
+    <div class="settings-row">
+      <div class="setting">
+        <span class="setting-label">Daily briefing</span>
+        <span class="setting-help">One summary across all domains, once a day</span>
+      </div>
+      <button
+        type="button"
+        class="switch"
+        [class.on]="settings.dailyBriefing"
+        (click)="toggleDailyBriefing()"
+        [attr.aria-pressed]="settings.dailyBriefing"
+        aria-label="Toggle daily briefing"
+      >
+        <span class="thumb"></span>
+      </button>
+    </div>
+
+    <div class="settings-tips">
+      <h4><i class="fa-solid fa-bolt"></i> Quick-create</h4>
+      <ul>
+        <li><code>task: review portfolio !high &#64;tomorrow</code></li>
+        <li><code>note: Title | body text</code></li>
+        <li><code>goal: Save for laptop target 80000 ₹</code></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Snapshot bar -->
+  <section class="snapshot" *ngIf="!showSettings">
+    <div class="chip danger" *ngIf="summary.overdue > 0">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <strong>{{ summary.overdue }}</strong>
+      <span>overdue</span>
+    </div>
+    <div class="chip warning" *ngIf="summary.due > 0">
+      <i class="fa-solid fa-bell"></i>
+      <strong>{{ summary.due }}</strong>
+      <span>due today</span>
+    </div>
+    <div class="chip info" *ngIf="summary.inProgress > 0">
+      <i class="fa-solid fa-spinner"></i>
+      <strong>{{ summary.inProgress }}</strong>
+      <span>in progress</span>
+    </div>
+    <div class="chip danger" *ngIf="summary.goalsAtRisk > 0">
+      <i class="fa-solid fa-flag"></i>
+      <strong>{{ summary.goalsAtRisk }}</strong>
+      <span>goals at risk</span>
+    </div>
+    <div class="chip success" *ngIf="summary.goalsClose > 0">
+      <i class="fa-solid fa-flag-checkered"></i>
+      <strong>{{ summary.goalsClose }}</strong>
+      <span>close to done</span>
+    </div>
+    <div class="chip warning" *ngIf="summary.invMaturing > 0">
+      <i class="fa-solid fa-coins"></i>
+      <strong>{{ summary.invMaturing }}</strong>
+      <span>maturing</span>
+    </div>
+    <div class="chip danger" *ngIf="summary.invLosingBig > 0">
+      <i class="fa-solid fa-arrow-trend-down"></i>
+      <strong>{{ summary.invLosingBig }}</strong>
+      <span>down 10%+</span>
+    </div>
+    <div class="chip success" *ngIf="summary.completedToday > 0">
+      <i class="fa-solid fa-circle-check"></i>
+      <strong>{{ summary.completedToday }}</strong>
+      <span>done today</span>
+    </div>
+    <div class="chip flame" *ngIf="summary.streakDays >= 2">
+      <i class="fa-solid fa-fire"></i>
+      <strong>{{ summary.streakDays }}</strong>
+      <span>day streak</span>
+    </div>
+    <div
+      class="chip neutral"
+      *ngIf="summary.overdue === 0 && summary.due === 0 && summary.inProgress === 0 && summary.goalsAtRisk === 0 && summary.invMaturing === 0 && summary.completedToday === 0"
+    >
+      <i class="fa-regular fa-face-smile"></i>
+      <span>All caught up</span>
+    </div>
+    <span class="last-check" [title]="'Last scanned at ' + lastCheckLabel()">
+      <i class="fa-regular fa-clock"></i>
+      {{ lastCheckLabel() }}
+    </span>
+  </section>
+
+  <!-- Feed -->
+  <section class="feed" #feed *ngIf="!showSettings" aria-live="polite">
+    <!-- Inline confirm-clear strip -->
+    <div class="confirm-clear" *ngIf="confirmingClear" role="alertdialog" aria-label="Clear conversation">
+      <div class="cc-icon">
+        <i class="fa-solid fa-trash-can"></i>
+      </div>
+      <div class="cc-body">
+        <strong>Clear conversation?</strong>
+        <small>This removes all messages from this device.</small>
+      </div>
+      <div class="cc-actions">
+        <button type="button" class="cc-btn ghost-btn" (click)="cancelClear()">Cancel</button>
+        <button type="button" class="cc-btn danger-btn" (click)="confirmClear()">
+          <i class="fa-solid fa-check"></i>
+          <span>Clear</span>
+        </button>
+      </div>
+    </div>
+
+    <ng-container *ngFor="let m of messages; let i = index; trackBy: trackByMessage">
+      <div class="day-break" *ngIf="shouldShowDateBreak(i)">
+        <span>{{ dayLabel(m.timestamp) }}</span>
+      </div>
+      <div class="bubble" [class.user]="m.author === 'user'">
+        <div class="bubble-text">{{ m.text }}</div>
+        <div class="bubble-suggestions" *ngIf="m.suggestions && m.suggestions.length">
+          <article
+            *ngFor="let s of m.suggestions; trackBy: trackBySuggestion"
+            class="suggestion"
+            [ngClass]="['tone-' + s.tone, 'domain-' + s.domain]"
+            (click)="goToTask(s)"
+            tabindex="0"
+            role="button"
+            (keydown.enter)="goToTask(s)"
+          >
+            <div class="suggestion-icon">
+              <i class="fa-solid" [ngClass]="s.icon"></i>
+            </div>
+            <div class="suggestion-body">
+              <strong>{{ s.title }}</strong>
+              <small>{{ s.detail }}</small>
+              <span class="domain-pill">{{ s.domain }}</span>
+            </div>
+            <div class="suggestion-actions">
+              <button
+                *ngIf="s.cta"
+                class="action-btn primary"
+                type="button"
+                (click)="applySuggestion(s); $event.stopPropagation()"
+                [title]="s.cta.label"
+                [attr.aria-label]="s.cta.label"
+              >
+                <i
+                  class="fa-solid"
+                  [ngClass]="{
+                    'fa-play': s.cta.action === 'mark-progress',
+                    'fa-check': s.cta.action === 'mark-done',
+                    'fa-arrow-up-right-from-square':
+                      s.cta.action === 'view-task' ||
+                      s.cta.action === 'view-goal' ||
+                      s.cta.action === 'view-investment' ||
+                      s.cta.action === 'view-note' ||
+                      s.cta.action === 'open-route',
+                    'fa-plus': s.cta.action === 'bump-goal'
+                  }"
+                ></i>
+              </button>
+              <button
+                class="action-btn ghost"
+                type="button"
+                (click)="snoozeSuggestion(s, $event)"
+                title="Snooze until tomorrow"
+                aria-label="Snooze until tomorrow"
+              >
+                <i class="fa-solid fa-bed"></i>
+              </button>
+            </div>
+          </article>
+        </div>
+        <span class="bubble-time">{{ timeOf(m.timestamp) }}</span>
+      </div>
+    </ng-container>
+
+    <!-- Typing indicator -->
+    <div class="bubble typing-bubble" *ngIf="thinking && messages.length > 0">
+      <span class="typing"><span></span><span></span><span></span></span>
+    </div>
+  </section>
+
+  <!-- Quick actions -->
+  <section class="quick-actions" *ngIf="!showSettings">
+    <button
+      *ngFor="let q of quickPrompts"
+      type="button"
+      (click)="ask(q.prompt)"
+    >
+      <i [class]="q.icon"></i>
+      <span>{{ q.label }}</span>
+    </button>
+  </section>
+
+  <!-- Composer -->
+  <footer class="composer" *ngIf="!showSettings">
+    <input
+      #input
+      type="text"
+      [(ngModel)]="draft"
+      placeholder="Ask, or try `task: ...`, `note: ...`, `goal: ... target N`"
+      (keydown.enter)="send()"
+      autocomplete="off"
+      aria-label="Type a message"
+    />
+    <button
+      type="button"
+      class="send"
+      (click)="send()"
+      [disabled]="!draft.trim()"
+      aria-label="Send message"
+    >
+      <i class="fa-solid fa-paper-plane"></i>
+    </button>
+  </footer>
+</aside>

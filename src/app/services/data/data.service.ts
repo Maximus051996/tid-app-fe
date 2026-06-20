@@ -2,25 +2,29 @@ import { Injectable } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
 import { BehaviorSubject } from 'rxjs';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class DataService {
   constructor(private toastr: ToastrService) {}
 
-  private dataSource = new BehaviorSubject<number>(0); // Initialize with a default value
-  currentData = this.dataSource.asObservable(); // Expose the observable
+  private taskCountSource = new BehaviorSubject<number>(0);
+  currentData = this.taskCountSource.asObservable();
 
-  // Method to emit data
+  private investmentCountSource = new BehaviorSubject<number>(0);
+  investmentCount$ = this.investmentCountSource.asObservable();
+
   changeData(data: number) {
-    this.dataSource.next(data); // Update the value in the BehaviorSubject
+    this.taskCountSource.next(data);
   }
 
-  showSuccessToasterMsg(message: any) {
+  changeInvestmentCount(count: number) {
+    this.investmentCountSource.next(count);
+  }
+
+  showSuccessToasterMsg(message: string) {
     this.toastr.success(message, 'Success');
   }
 
-  showerrorToaster(message: any) {
+  showerrorToaster(message: string) {
     this.toastr.error(message, 'Error');
   }
 }

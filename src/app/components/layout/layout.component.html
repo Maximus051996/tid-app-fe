@@ -1,78 +1,299 @@
-<nav class="navbar navbar-light bg-light">
-  <div class="container-fluid d-flex align-items-center">
-    <div class="d-flex align-items-center">
-      <button
-        class="navbar-toggler"
-        type="button"
-        data-bs-toggle="offcanvas"
-        data-bs-target="#offcanvasWithBothOptions"
-        aria-controls="offcanvasWithBothOptions"
-      >
-        <span class="navbar-toggler-icon" style="font-size: 1rem"></span>
-      </button>
-      <span class="ms-3 text-black fs-4">Task Investment Decision</span>
+<div class="app-shell" [class.collapsed]="isCollapsed" [class.mobile-open]="mobileOpen">
+  <!-- Ambient blue plasma background (decorative) -->
+  <div class="plasma-bg" aria-hidden="true">
+    <span class="plasma-shimmer"></span>
+    <span class="plasma-orb plasma-1"></span>
+    <span class="plasma-orb plasma-2"></span>
+    <span class="plasma-orb plasma-3"></span>
+    <span class="plasma-grid"></span>
+
+    <!-- Twinkling star particles -->
+    <span class="star s1"></span>
+    <span class="star s2"></span>
+    <span class="star s3"></span>
+    <span class="star s4"></span>
+    <span class="star s5"></span>
+    <span class="star s6"></span>
+    <span class="star s7"></span>
+    <span class="star s8"></span>
+    <span class="star s9"></span>
+    <span class="star s10"></span>
+
+    <!-- Flowing light ribbons that sweep across the page -->
+    <svg class="plasma-ribbons" viewBox="0 0 1200 800" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="ribbon-grad-a" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#a78bfa" stop-opacity="0" />
+          <stop offset="20%" stop-color="#c4b5fd" stop-opacity="0.65" />
+          <stop offset="50%" stop-color="#ffffff" stop-opacity="0.85" />
+          <stop offset="80%" stop-color="#a78bfa" stop-opacity="0.55" />
+          <stop offset="100%" stop-color="#7c3aed" stop-opacity="0" />
+        </linearGradient>
+        <linearGradient id="ribbon-grad-b" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#22d3ee" stop-opacity="0" />
+          <stop offset="25%" stop-color="#67e8f9" stop-opacity="0.5" />
+          <stop offset="50%" stop-color="#ffffff" stop-opacity="0.75" />
+          <stop offset="75%" stop-color="#38bdf8" stop-opacity="0.45" />
+          <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0" />
+        </linearGradient>
+        <linearGradient id="ribbon-grad-c" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#818cf8" stop-opacity="0" />
+          <stop offset="50%" stop-color="#ffffff" stop-opacity="0.7" />
+          <stop offset="100%" stop-color="#a78bfa" stop-opacity="0" />
+        </linearGradient>
+        <filter id="ribbon-glow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="4" result="b1" />
+          <feGaussianBlur stdDeviation="10" result="b2" />
+          <feMerge>
+            <feMergeNode in="b2" />
+            <feMergeNode in="b1" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
+      <!-- Three thin glowing wisps that travel along long S-curves -->
+      <path
+        class="ribbon ribbon-1"
+        d="M -120 220 C 220 60, 480 360, 760 200 S 1180 260, 1320 120"
+        stroke="url(#ribbon-grad-a)"
+        stroke-width="1.4"
+        fill="none"
+        filter="url(#ribbon-glow)"
+      />
+      <path
+        class="ribbon ribbon-2"
+        d="M -120 540 C 260 620, 540 360, 840 560 S 1240 480, 1320 620"
+        stroke="url(#ribbon-grad-b)"
+        stroke-width="1.2"
+        fill="none"
+        filter="url(#ribbon-glow)"
+      />
+      <path
+        class="ribbon ribbon-3"
+        d="M -120 380 C 300 280, 580 500, 880 320 S 1240 420, 1320 320"
+        stroke="url(#ribbon-grad-c)"
+        stroke-width="1"
+        fill="none"
+        filter="url(#ribbon-glow)"
+      />
+      <!-- Two reverse-direction wisps for variety -->
+      <path
+        class="ribbon ribbon-4"
+        d="M 1320 140 C 980 280, 700 80, 420 240 S 60 320, -120 200"
+        stroke="url(#ribbon-grad-a)"
+        stroke-width="1.1"
+        fill="none"
+        filter="url(#ribbon-glow)"
+      />
+      <path
+        class="ribbon ribbon-5"
+        d="M 1320 480 C 980 380, 680 600, 420 460 S 100 540, -120 460"
+        stroke="url(#ribbon-grad-b)"
+        stroke-width="0.9"
+        fill="none"
+        filter="url(#ribbon-glow)"
+      />
+    </svg>
+  </div>
+
+  <aside class="sidebar" [attr.aria-expanded]="!isCollapsed">
+    <!-- Brand row -->
+    <div class="sidebar-brand">
+      <app-brand-logo class="brand-mark" [size]="44" [animated]="true" [title]="isCollapsed ? 'TID' : ''"></app-brand-logo>
+      <div class="brand-text" *ngIf="!isCollapsed">
+        <span class="brand-title">TID</span>
+        <span class="brand-sub">Task &amp; Investment</span>
+      </div>
     </div>
-  </div>
-</nav>
 
-<div
-  class="offcanvas offcanvas-start"
-  data-bs-scroll="true"
-  tabindex="-1"
-  id="offcanvasWithBothOptions"
-  aria-labelledby="offcanvasWithBothOptionsLabel"
->
-  <div class="offcanvas-header">
-    <h5 class="offcanvas-title" id="offcanvasWithBothOptionsLabel">
-      <button type="button" class="btn btn-primary position-relative">
-        {{ userName }}
-        <span
-          class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-          style="font-size: 0.75rem; padding: 0.5em 0.6em"
-        >
-          {{ taskCount }}
+    <!-- User card -->
+    <div class="user-card" *ngIf="!isCollapsed">
+      <div class="avatar">{{ initials() }}</div>
+      <div class="user-info">
+        <span class="user-name">{{ userName }}</span>
+        <span class="user-role" [class.admin]="role === 'admin'">
+          <i class="fa-solid" [ngClass]="role === 'admin' ? 'fa-shield-halved' : 'fa-user'"></i>
+          {{ role }}
         </span>
+      </div>
+    </div>
+    <div class="avatar-rail" *ngIf="isCollapsed" [title]="userName || ''">
+      {{ initials() }}
+    </div>
+
+    <!-- Stats -->
+    <div class="quick-stats" *ngIf="!isCollapsed">
+      <div class="stat">
+        <span class="stat-value">{{ taskCount }}</span>
+        <span class="stat-label">Open Tasks</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">{{ investmentCount }}</span>
+        <span class="stat-label">Investments</span>
+      </div>
+    </div>
+
+    <div class="section-title" *ngIf="!isCollapsed">
+      <span>Menu</span>
+    </div>
+
+    <!-- Primary nav -->
+    <nav class="nav-list" aria-label="Primary">
+      <a
+        *ngFor="let item of visibleMenu()"
+        [routerLink]="item.path"
+        class="nav-link"
+        [routerLinkActive]="['active']"
+        [routerLinkActiveOptions]="{ exact: true }"
+        [title]="isCollapsed ? item.name : ''"
+        (click)="closeMobile()"
+      >
+        <span class="active-rail" aria-hidden="true"></span>
+        <i [class]="item.icon"></i>
+        <span class="nav-label" *ngIf="!isCollapsed">{{ item.name }}</span>
+
+        <!-- Trailing element: action button OR badge -->
+        <ng-container *ngIf="!isCollapsed">
+          <button
+            *ngIf="item.action"
+            class="nav-action"
+            type="button"
+            (click)="triggerAction(item, $event)"
+            [attr.aria-label]="item.action === 'add-task' ? 'Add task' : 'Action'"
+          >
+            <i class="fa-solid fa-plus"></i>
+          </button>
+          <span
+            *ngIf="!item.action && badgeFor(item) !== null"
+            class="nav-badge"
+          >{{ badgeFor(item) }}</span>
+        </ng-container>
+
+        <span
+          *ngIf="isCollapsed && badgeFor(item) !== null && (badgeFor(item) ?? 0) > 0"
+          class="nav-dot"
+        ></span>
+      </a>
+    </nav>
+
+    <div class="nav-spacer"></div>
+
+    <!-- Theme toggle (above account section) -->
+    <div class="theme-toggle" *ngIf="!isCollapsed">
+      <button
+        type="button"
+        class="theme-btn"
+        [class.active]="theme === 'light'"
+        (click)="setTheme('light')"
+        aria-label="Light theme"
+      >
+        <i class="fa-solid fa-sun"></i>
+        <span>Light</span>
       </button>
-    </h5>
+      <button
+        type="button"
+        class="theme-btn"
+        [class.active]="theme === 'dark'"
+        (click)="setTheme('dark')"
+        aria-label="Dark theme"
+      >
+        <i class="fa-solid fa-moon"></i>
+        <span>Dark</span>
+      </button>
+    </div>
     <button
+      *ngIf="isCollapsed"
       type="button"
-      class="btn-close text-reset"
-      data-bs-dismiss="offcanvas"
-      aria-label="Close"
-    ></button>
-  </div>
-  <div class="text-center">
-    <img
-      src="https://getdrawings.com/free-icon/user-icon-png-52.png"
-      class="rounded"
-      style="width: 7rem"
-    />
-  </div>
-  <hr class="rounded" />
-
-  <div class="offcanvas-body">
-    <ul class="nav flex-column">
-      <li class="nav-item" *ngFor="let item of menuItems">
-        <a
-          [routerLink]="item.path"
-          class="nav-link bg-dark-subtle"
-          [routerLinkActive]="['active']"
-          [routerLinkActiveOptions]="{ exact: true }"
-        >
-          <i class="{{ item.icon }} fs-5"></i>
-          <span class="mx-3">{{ item.name }}</span>
-        </a>
-      </li>
-    </ul>
-    <button
-      type="button"
-      class="btn btn-danger btn-lg btn-block"
-      style="width: -webkit-fill-available"
-      (click)="logout()"
+      class="theme-rail-btn"
+      (click)="toggleTheme()"
+      [title]="theme === 'dark' ? 'Switch to light' : 'Switch to dark'"
+      aria-label="Toggle theme"
     >
-      Logout
+      <i class="fa-solid" [ngClass]="theme === 'dark' ? 'fa-sun' : 'fa-moon'"></i>
     </button>
-  </div>
-</div>
 
-<router-outlet />
+    <div class="section-title" *ngIf="!isCollapsed">
+      <span>Account</span>
+    </div>
+    <nav class="nav-list secondary" aria-label="Secondary">
+      <a
+        routerLink="help"
+        class="nav-link"
+        [routerLinkActive]="['active']"
+        [routerLinkActiveOptions]="{ exact: true }"
+        [title]="isCollapsed ? 'Help & docs' : ''"
+        (click)="closeMobile()"
+      >
+        <span class="active-rail" aria-hidden="true"></span>
+        <i class="fa-solid fa-circle-question"></i>
+        <span class="nav-label" *ngIf="!isCollapsed">Help &amp; docs</span>
+      </a>
+      <button
+        class="nav-link logout"
+        type="button"
+        (click)="logout()"
+        [title]="isCollapsed ? 'Logout' : ''"
+      >
+        <span class="active-rail" aria-hidden="true"></span>
+        <i class="fa-solid fa-right-from-bracket"></i>
+        <span class="nav-label" *ngIf="!isCollapsed">Logout</span>
+      </button>
+    </nav>
+  </aside>
+
+  <!-- Floating collapse handle (desktop only). Lives outside the sidebar so it
+       isn't clipped by overflow:auto on the scroll container. -->
+  <button
+    *ngIf="!isMobile"
+    class="collapse-btn"
+    type="button"
+    (click)="toggleCollapse()"
+    [attr.aria-label]="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+  >
+    <i class="fa-solid" [ngClass]="collapsed ? 'fa-chevron-right' : 'fa-chevron-left'"></i>
+  </button>
+
+  <div class="backdrop" (click)="closeMobile()"></div>
+
+  <div class="main-column">
+    <header class="mobile-topbar">
+      <button class="icon-btn" (click)="toggleMobile()" aria-label="Open menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="mobile-brand">
+        <app-brand-logo class="brand-mark small" [size]="32" [flat]="true"></app-brand-logo>
+        <span>Task &amp; Investment</span>
+      </div>
+      <button
+        type="button"
+        class="icon-btn"
+        (click)="toggleTheme()"
+        aria-label="Toggle theme"
+      >
+        <i class="fa-solid" [ngClass]="theme === 'dark' ? 'fa-sun' : 'fa-moon'"></i>
+      </button>
+      <div class="avatar small">{{ initials() }}</div>
+    </header>
+
+    <main class="app-main">
+      <router-outlet />
+    </main>
+
+    <footer class="app-footer" aria-label="App credits">
+      <div class="af-inner">
+        <div class="af-brand">
+          <app-brand-logo class="af-logo" [size]="36" [flat]="true"></app-brand-logo>
+          <div class="af-brand-text">
+            <span class="af-name">{{ appName }}</span>
+          </div>
+          <span class="af-version-pill">v{{ appVersion }}</span>
+        </div>
+      </div>
+
+      <div class="af-copy">{{ appCopyright }}</div>
+    </footer>
+  </div>
+
+  <app-assistant></app-assistant>
+</div>

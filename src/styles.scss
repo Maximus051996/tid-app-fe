@@ -1,69 +1,567 @@
-/* You can add global styles to this file, and also import other style files */
-/* Base font size settings */
+/* ========== Theme tokens ========== */
+:root,
+[data-theme='dark'] {
+  --bg: #0d0f15;
+  --surface: #14161e;
+  --surface-2: #0a0c12;
+  --surface-3: #1a1d27;
+  --border: #1c1f29;
+  --border-strong: #232733;
+
+  --text: #e6e8ed;
+  --text-soft: #c2c6d0;
+  --muted: #8b909e;
+  --faint: #5a5f6b;
+
+  --accent: #22c55e;
+  --accent-2: #16a34a;
+  --accent-3: #4ade80;
+  --accent-soft: rgba(34, 197, 94, 0.14);
+  --accent-soft-2: rgba(34, 197, 94, 0.20);
+  --accent-border: rgba(34, 197, 94, 0.4);
+  --accent-on: #ffffff;
+  --accent-glow: rgba(34, 197, 94, 0.35);
+
+  --danger: #ef4444;
+  --danger-soft: rgba(239, 68, 68, 0.14);
+  --danger-soft-2: rgba(239, 68, 68, 0.20);
+  --danger-border: rgba(239, 68, 68, 0.4);
+  --danger-text: #fca5a5;
+
+  --warning: #f59e0b;
+  --warning-soft: rgba(245, 158, 11, 0.14);
+  --warning-soft-2: rgba(245, 158, 11, 0.20);
+  --warning-text: #fde68a;
+
+  --info: #38bdf8;
+  --info-soft: rgba(56, 189, 248, 0.14);
+  --info-soft-2: rgba(56, 189, 248, 0.20);
+  --info-text: #bae6fd;
+
+  --violet: #8b5cf6;
+
+  --tone-success: #bbf7d0;
+
+  --shadow-1: 0 6px 14px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 12px 28px rgba(0, 0, 0, 0.4);
+  --shadow-3: 0 18px 36px rgba(0, 0, 0, 0.5);
+
+  --color-scheme: dark;
+
+  /* Fluid type scale — every component reads from these tokens.
+     Values shrink on phones and grow on wide displays automatically. */
+  --fs-xs:  clamp(0.68rem, 0.65rem + 0.15vw, 0.76rem);
+  --fs-sm:  clamp(0.78rem, 0.74rem + 0.2vw, 0.88rem);
+  --fs-md:  clamp(0.88rem, 0.84rem + 0.2vw, 0.98rem);
+  --fs-base:clamp(0.95rem, 0.9rem  + 0.25vw, 1.05rem);
+  --fs-lg:  clamp(1.05rem, 0.98rem + 0.35vw, 1.2rem);
+  --fs-xl:  clamp(1.18rem, 1.05rem + 0.6vw, 1.4rem);
+  --fs-2xl: clamp(1.35rem, 1.15rem + 1vw,  1.75rem);
+  --fs-3xl: clamp(1.6rem,  1.3rem  + 1.5vw, 2.2rem);
+  --fs-4xl: clamp(2rem,    1.55rem + 2.4vw, 3rem);
+
+  /* Density spacing scale */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.25rem;
+  --sp-6: 1.5rem;
+  --sp-8: 2rem;
+
+  /* Common border radii */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 22px;
+}
+
+[data-theme='light'] {
+  --bg: #f1f5f9;
+  --surface: #ffffff;
+  --surface-2: #f6f8fc;
+  --surface-3: #eaeef5;
+  --border: #dbe1ec;
+  --border-strong: #b9c3d4;
+
+  --text: #0f172a;
+  --text-soft: #1f2937;
+  --muted: #4b5563;
+  --faint: #94a3b8;
+
+  --accent: #16a34a;
+  --accent-2: #15803d;
+  --accent-3: #22c55e;
+  --accent-soft: rgba(22, 163, 74, 0.10);
+  --accent-soft-2: rgba(22, 163, 74, 0.18);
+  --accent-border: rgba(22, 163, 74, 0.35);
+  --accent-on: #ffffff;
+  --accent-glow: rgba(22, 163, 74, 0.25);
+
+  --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.08);
+  --danger-soft-2: rgba(220, 38, 38, 0.14);
+  --danger-border: rgba(220, 38, 38, 0.3);
+  --danger-text: #b91c1c;
+
+  --warning: #d97706;
+  --warning-soft: rgba(217, 119, 6, 0.10);
+  --warning-soft-2: rgba(217, 119, 6, 0.18);
+  --warning-text: #b45309;
+
+  --info: #0284c7;
+  --info-soft: rgba(2, 132, 199, 0.08);
+  --info-soft-2: rgba(2, 132, 199, 0.14);
+  --info-text: #0369a1;
+
+  --violet: #7c3aed;
+
+  --tone-success: #15803d;
+
+  --shadow-1: 0 4px 14px rgba(15, 23, 42, 0.08);
+  --shadow-2: 0 14px 32px rgba(15, 23, 42, 0.10);
+  --shadow-3: 0 24px 48px rgba(15, 23, 42, 0.16);
+
+  --color-scheme: light;
+}
+
+/* Base font size — anchors the rem unit per device tier so the whole
+   page rescales cleanly without forcing every component to use clamp(). */
 html {
-  font-size: 16px; /* Base font size (1rem = 16px) */
+  font-size: 16px;
 }
 
-/* Responsive font sizes */
+@media (max-width: 1199.98px) { html { font-size: 15.5px; } }
+@media (max-width: 991.98px)  { html { font-size: 15px; } }
+@media (max-width: 767.98px)  { html { font-size: 14.5px; } }
+@media (max-width: 575.98px)  { html { font-size: 14px; } }
+@media (max-width: 374.98px)  { html { font-size: 13.5px; } }
+
 body {
-  font-size: 1rem; /* Default font size */
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont,
+    'Helvetica Neue', Arial, sans-serif;
+  font-size: var(--fs-base);
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Adjust font size for smaller devices */
-@media (max-width: 1199.98px) {
-  body {
-    font-size: 0.95rem; /* Slightly smaller font size for medium screens */
-  }
+a { color: var(--accent); }
+
+h1 { font-size: var(--fs-3xl); line-height: 1.15; margin: 0; }
+h2 { font-size: var(--fs-xl);  line-height: 1.2;  margin: 0; }
+h3 { font-size: var(--fs-lg);  line-height: 1.25; margin: 0; }
+h4 { font-size: var(--fs-md);  line-height: 1.3;  margin: 0; }
+small { font-size: var(--fs-sm); }
+code { font-size: 0.9em; }
+
+button, input, select, textarea { font-family: inherit; font-size: var(--fs-md); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* Toastr */
+.toast-container .ngx-toastr {
+  border-radius: 12px !important;
+  box-shadow: var(--shadow-3) !important;
+}
+.toast-container .toast-success { background-color: var(--accent-2) !important; color: #fff !important; }
+.toast-container .toast-error { background-color: #dc2626 !important; color: #fff !important; }
+
+/* ========== Global responsive scaffolding ========== */
+/* Every page already uses .page as the outer container — these rules
+   keep horizontal padding consistent across breakpoints without
+   touching every component file. */
+.page {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: clamp(1rem, 2.5vw, 1.5rem);
+  padding-right: clamp(1rem, 2.5vw, 1.5rem);
+  box-sizing: border-box;
 }
 
-@media (max-width: 991.98px) {
-  body {
-    font-size: 0.9rem; /* Smaller font size for tablets */
-  }
+/* Form cards used across task / investment / admin pages */
+.form-card {
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 @media (max-width: 767.98px) {
-  body {
-    font-size: 0.85rem; /* Even smaller font size for mobile phones */
+  .form-card { padding: 1.25rem !important; border-radius: 16px !important; }
+  /* Two-column form grids collapse to single-column on tablets-portrait & phones */
+  .form-card .grid { grid-template-columns: 1fr !important; }
+  .form-card .grid .field.span-2 { grid-column: auto !important; }
+}
+
+@media (max-width: 575.98px) {
+  .form-card { padding: 1rem !important; border-radius: 14px !important; }
+  /* Form action rows: full-width buttons stacked on phones */
+  .form-card .actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  .form-card .actions button { width: 100%; justify-content: center; }
+}
+
+/* Make all inputs / selects / textareas obey the touch-target floor on mobile */
+@media (max-width: 575.98px) {
+  input[type='text'],
+  input[type='email'],
+  input[type='password'],
+  input[type='tel'],
+  input[type='number'],
+  input[type='date'],
+  input[type='datetime-local'],
+  select,
+  textarea {
+    font-size: 16px; /* prevents iOS Safari from auto-zooming on focus */
   }
 }
 
-/* Ensure specific elements scale accordingly */
-h1 {
-  font-size: 2.5rem; /* Example heading size */
-}
+/* ========== Global button system ==========
+   One source of truth for every button across the app.
+   Existing class names (primary-btn, ghost-btn, cancel-btn, danger-btn,
+   btn-link, icon-btn) all map onto a single base so type, shape, focus
+   and alignment stay consistent. Per-component overrides should only
+   adjust spacing, not redesign the button.
 
-h2 {
-  font-size: 2rem; /* Example heading size */
-}
+   Usage tiers:
+     - .primary-btn  → main call-to-action (filled gradient)
+     - .ghost-btn    → secondary action (outlined)
+     - .danger-btn   → destructive primary (filled red)
+     - .cancel-btn   → quiet alternative to ghost
+     - .btn-link     → low-emphasis row action (table cells)
+     - .icon-btn     → square icon-only control
+     - .small modifier on any of the above for compact sizing
+*/
 
-p {
-  font-size: 1rem; /* Example paragraph size */
-}
+%btn-base {
+  --btn-radius: 11px;
+  --btn-py: 0.6rem;
+  --btn-px: 1.05rem;
+  --btn-gap: 0.5rem;
+  --btn-fs: var(--fs-md);
 
-/* Adjust heading sizes on smaller devices */
-@media (max-width: 767.98px) {
-  h1 {
-    font-size: 2rem; /* Adjusted heading size for small screens */
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--btn-gap);
+  padding: var(--btn-py) var(--btn-px);
+  min-height: 40px;
+  border-radius: var(--btn-radius);
+  border: 1px solid transparent;
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--btn-fs);
+  font-weight: 700;
+  letter-spacing: 0.005em;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none !important;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease,
+    opacity 0.18s ease;
+
+  /* Icons line up perfectly with text regardless of font ascender height */
+  i,
+  .fa,
+  .fa-solid,
+  .fa-regular,
+  .fa-brands {
+    font-size: 0.95em;
+    line-height: 1;
+    display: inline-flex;
   }
 
-  h2 {
-    font-size: 1.75rem; /* Adjusted heading size for small screens */
+  /* Inner span used by some buttons for shine layering keeps the text
+     vertically centered the same way an icon does. */
+  > span { line-height: 1; display: inline-flex; align-items: center; }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
-} /* For the scrollbar track */
-::-webkit-scrollbar {
-  width: 12px; /* Width of the scrollbar */
+
+  &:disabled,
+  &[disabled] {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  &.small {
+    --btn-py: 0.42rem;
+    --btn-px: 0.75rem;
+    --btn-fs: var(--fs-sm);
+    --btn-radius: 9px;
+    min-height: 32px;
+  }
+
+  &.block { width: 100%; }
 }
 
-::-webkit-scrollbar-track {
-  background: #f1f1f1; /* Color of the track */
+/* Primary — filled gradient, the page's main CTA */
+.primary-btn {
+  @extend %btn-base;
+  background: linear-gradient(135deg, var(--accent-3), var(--accent-2));
+  color: var(--accent-on);
+  border-color: transparent;
+  box-shadow: 0 10px 22px var(--accent-glow);
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px var(--accent-glow);
+    filter: brightness(1.04);
+  }
+  &:active:not(:disabled) { transform: translateY(0); filter: brightness(0.98); }
 }
 
-::-webkit-scrollbar-thumb {
-  background: #dad8d8; /* Color of the thumb */
-  border-radius: 10px; /* Rounded corners of the thumb */
+/* Ghost — outlined, secondary */
+.ghost-btn {
+  @extend %btn-base;
+  background: var(--surface-2);
+  color: var(--text-soft);
+  border-color: var(--border);
+
+  &:hover:not(:disabled) {
+    background: var(--surface-3);
+    color: var(--text);
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
+  }
+  &:active:not(:disabled) { transform: translateY(0); }
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #4e8b5b; /* Color of the thumb on hover */
+/* Cancel — calm neutral, quieter than ghost */
+.cancel-btn {
+  @extend %btn-base;
+  background: transparent;
+  color: var(--muted);
+  border-color: var(--border);
+
+  &:hover:not(:disabled) {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+}
+
+/* Danger — destructive primary */
+.danger-btn {
+  @extend %btn-base;
+  background: linear-gradient(135deg, #f87171, var(--danger));
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 10px 22px rgba(239, 68, 68, 0.32);
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(239, 68, 68, 0.38);
+    filter: brightness(1.04);
+  }
+  &:active:not(:disabled) { transform: translateY(0); filter: brightness(0.98); }
+}
+
+/* Compact row action — used inside table cells.
+   Pill-shaped, soft-tinted, never wraps. NOTE: do NOT name this `.btn-link`
+   — Bootstrap ships its own `.btn-link` that forces `text-decoration: underline`. */
+.row-btn {
+  @extend %btn-base;
+  --btn-py: 0.45rem;
+  --btn-px: 0.85rem;
+  --btn-fs: var(--fs-sm);
+  --btn-radius: 999px;
+  min-height: 32px;
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border-strong);
+  font-weight: 700;
+  text-decoration: none !important;
+  letter-spacing: 0.01em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+  i {
+    color: var(--muted);
+    transition: color 0.18s ease, transform 0.18s ease;
+  }
+
+  &:hover:not(:disabled) {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-color: var(--accent-border);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px var(--accent-glow);
+
+    i { color: var(--accent); transform: translateY(-1px); }
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  &.danger {
+    color: var(--danger-text);
+    background: linear-gradient(135deg, var(--danger-soft), var(--danger-soft-2));
+    border-color: var(--danger-border);
+
+    i { color: var(--danger-text); }
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(135deg, #f87171, var(--danger));
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 8px 18px rgba(239, 68, 68, 0.38);
+
+      i { color: #fff; }
+    }
+  }
+
+  &:disabled,
+  &[disabled] {
+    background: var(--surface-2);
+    color: var(--faint);
+    border-color: var(--border);
+    box-shadow: none;
+    i { color: var(--faint); }
+  }
+}
+
+/* Square icon-only button */
+.icon-btn {
+  @extend %btn-base;
+  --btn-py: 0;
+  --btn-px: 0;
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  background: var(--surface-2);
+  color: var(--text-soft);
+  border-color: var(--border);
+
+  &:hover:not(:disabled) {
+    background: var(--surface-3);
+    color: var(--text);
+    border-color: var(--border-strong);
+  }
+
+  &.small { width: 30px; height: 30px; min-height: 30px; }
+
+  &.delete {
+    color: var(--danger-text);
+    border-color: var(--danger-border);
+    background: var(--danger-soft);
+
+    &:hover:not(:disabled) {
+      background: var(--danger-soft-2);
+      color: var(--danger-text);
+    }
+  }
+}
+
+/* Reduced motion: drop hover lifts and shines */
+@media (prefers-reduced-motion: reduce) {
+  .primary-btn, .ghost-btn, .danger-btn, .cancel-btn, .btn-link, .icon-btn {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+
+/* ============================================================
+   Light-mode polish — deeper shadows on cards / KPIs / form
+   surfaces so the white-on-white flatness goes away. Lives in
+   the global stylesheet because component view encapsulation
+   would otherwise scope these selectors out of reach.
+   ============================================================ */
+[data-theme='light'] {
+  .form-card,
+  .users-card,
+  .note-card,
+  .goal-card,
+  .empty-state,
+  .kpi,
+  .stat,
+  .table-wrap {
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  }
+
+  .form-card,
+  .users-card,
+  .kpi,
+  .goal-card,
+  .stat {
+    background: linear-gradient(180deg, #ffffff, #fbfcfe);
+  }
+
+  /* Toolbar / search inputs read better with a subtle inner shadow */
+  .search input,
+  .search-input input,
+  .ed-input,
+  .ed-textarea,
+  .ms-input {
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+  }
+
+  /* KPI top accent bars need a touch more saturation on white */
+  .kpi::after { opacity: 0.95; }
+
+  /* Buttons get a slightly stronger shadow on light bg */
+  .primary-btn,
+  .danger-btn {
+    box-shadow: 0 8px 18px var(--accent-glow);
+  }
+
+  /* Row buttons (table action pills) — give them a clearer outline */
+  .row-btn {
+    background: #ffffff;
+    border-color: var(--border-strong);
+    color: var(--text);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+
+    i { color: var(--muted); }
+
+    &:hover:not(:disabled) {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: var(--accent-border);
+      box-shadow: 0 6px 14px var(--accent-glow);
+      i { color: var(--accent); }
+    }
+
+    &.danger {
+      background: linear-gradient(180deg, #fff, #fff5f5);
+      border-color: var(--danger-border);
+      color: var(--danger-text);
+
+      i { color: var(--danger-text); }
+
+      &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #f87171, var(--danger));
+        color: #ffffff;
+        i { color: #ffffff; }
+      }
+    }
+  }
+
+  /* Tabular hover row darkens enough to be visible */
+  .users-card tbody tr:hover { background: var(--surface-2); }
 }

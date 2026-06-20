@@ -1,0 +1,222 @@
+<div class="page note-page">
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Workspace</span>
+      <h1>Notes</h1>
+      <p class="lede">Capture quick thoughts, lists, and reminders. Pin the ones that matter most.</p>
+    </div>
+    <button class="primary-btn" (click)="openCreate()">
+      <i class="fa-solid fa-plus"></i>
+      <span>New note</span>
+    </button>
+  </header>
+
+  <!-- KPI strip -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <span class="kpi-icon" data-tone="accent"><i class="fa-solid fa-note-sticky"></i></span>
+      <div class="kpi-text">
+        <span class="kpi-value">{{ totalCount }}</span>
+        <span class="kpi-label">Total notes</span>
+      </div>
+    </div>
+    <div class="kpi">
+      <span class="kpi-icon" data-tone="warning"><i class="fa-solid fa-thumbtack"></i></span>
+      <div class="kpi-text">
+        <span class="kpi-value">{{ pinnedCount }}</span>
+        <span class="kpi-label">Pinned</span>
+      </div>
+    </div>
+    <div class="kpi">
+      <span class="kpi-icon" data-tone="info"><i class="fa-solid fa-tags"></i></span>
+      <div class="kpi-text">
+        <span class="kpi-value">{{ tagCount }}</span>
+        <span class="kpi-label">Tags in use</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input
+        type="text"
+        [(ngModel)]="searchText"
+        placeholder="Search notes, tags, or body..."
+      />
+    </div>
+    <div class="color-filter">
+      <app-select
+        [(ngModel)]="selectedColor"
+        [options]="colorFilterOptions"
+        placeholder="Filter by color"
+      ></app-select>
+    </div>
+  </div>
+
+  <!-- Pinned section -->
+  <ng-container *ngIf="pinnedNotes.length > 0">
+    <h3 class="section-title">
+      <i class="fa-solid fa-thumbtack"></i> Pinned
+    </h3>
+    <div class="note-grid">
+      <ng-container *ngFor="let n of pinnedNotes; trackBy: trackById">
+        <ng-container *ngTemplateOutlet="noteCard; context: { $implicit: n }"></ng-container>
+      </ng-container>
+    </div>
+  </ng-container>
+
+  <!-- Others -->
+  <ng-container *ngIf="otherNotes.length > 0">
+    <h3 class="section-title" *ngIf="pinnedNotes.length > 0">
+      <i class="fa-solid fa-folder-open"></i> Others
+    </h3>
+    <div class="note-grid">
+      <ng-container *ngFor="let n of otherNotes; trackBy: trackById">
+        <ng-container *ngTemplateOutlet="noteCard; context: { $implicit: n }"></ng-container>
+      </ng-container>
+    </div>
+  </ng-container>
+
+  <!-- Empty state -->
+  <div class="empty-state" *ngIf="filtered.length === 0">
+    <div class="empty-illu" aria-hidden="true">
+      <i class="fa-solid fa-note-sticky"></i>
+    </div>
+    <h3 *ngIf="notes.length === 0">Your notebook is empty</h3>
+    <h3 *ngIf="notes.length > 0">No notes match this filter</h3>
+    <p *ngIf="notes.length === 0">Capture your first idea — it could be a quick reminder, a list, or a quote you love.</p>
+    <p *ngIf="notes.length > 0">Try a different search term or color.</p>
+    <button class="primary-btn" (click)="openCreate()" *ngIf="notes.length === 0">
+      <i class="fa-solid fa-plus"></i>
+      <span>New note</span>
+    </button>
+  </div>
+</div>
+
+<!-- ---------- Note Card Template ---------- -->
+<ng-template #noteCard let-n>
+  <article
+    class="note-card"
+    [attr.data-color]="n.color"
+    (click)="openEdit(n)"
+    [class.is-pinned]="n.pinned"
+    tabindex="0"
+    (keydown.enter)="openEdit(n)"
+  >
+    <header class="nc-head">
+      <h4 class="nc-title" *ngIf="n.title">{{ n.title }}</h4>
+      <span class="nc-untitled" *ngIf="!n.title">Untitled</span>
+      <div class="nc-actions">
+        <button
+          type="button"
+          class="nc-icon-btn"
+          [class.active]="n.pinned"
+          (click)="togglePin(n, $event)"
+          [attr.aria-label]="n.pinned ? 'Unpin' : 'Pin'"
+        >
+          <i class="fa-solid fa-thumbtack"></i>
+        </button>
+        <button
+          type="button"
+          class="nc-icon-btn danger"
+          (click)="remove(n, $event)"
+          aria-label="Delete note"
+        >
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      </div>
+    </header>
+
+    <p class="nc-body" *ngIf="n.body">{{ preview(n.body) }}</p>
+
+    <footer class="nc-foot">
+      <div class="nc-tags" *ngIf="n.tags.length > 0">
+        <span class="nc-tag" *ngFor="let t of n.tags">#{{ t }}</span>
+      </div>
+      <span class="nc-time">
+        <i class="fa-regular fa-clock"></i>
+        {{ n.updatedAt | date:'MMM d' }}
+      </span>
+    </footer>
+  </article>
+</ng-template>
+
+<!-- ---------- Editor Modal ---------- -->
+<div class="ed-backdrop" *ngIf="editorOpen" (click)="closeEditor()" role="dialog" aria-modal="true">
+  <div class="ed-panel" [attr.data-color]="draft.color" (click)="$event.stopPropagation()">
+    <header class="ed-head">
+      <div class="ed-titles">
+        <span class="ed-eyebrow">{{ editing ? 'Edit note' : 'New note' }}</span>
+        <h2>{{ editing ? 'Refine your idea' : 'Capture a thought' }}</h2>
+      </div>
+      <button type="button" class="icon-btn" (click)="closeEditor()" aria-label="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </header>
+
+    <div class="ed-body">
+      <input
+        class="ed-title"
+        type="text"
+        [(ngModel)]="draft.title"
+        placeholder="Title (optional)"
+        maxlength="120"
+      />
+      <textarea
+        class="ed-textarea"
+        [(ngModel)]="draft.body"
+        rows="9"
+        placeholder="Write your note here..."
+      ></textarea>
+
+      <div class="ed-row">
+        <label class="ed-label">Tags</label>
+        <input
+          class="ed-input"
+          type="text"
+          [(ngModel)]="draft.tagsRaw"
+          placeholder="comma, separated, tags"
+        />
+      </div>
+
+      <div class="ed-row">
+        <label class="ed-label">Color</label>
+        <div class="color-palette">
+          <button
+            *ngFor="let c of colorPalette"
+            type="button"
+            class="swatch"
+            [attr.data-color]="c.value"
+            [class.active]="draft.color === c.value"
+            (click)="pickColor(c.value)"
+            [attr.aria-label]="c.label"
+            [title]="c.label"
+          >
+            <i class="fa-solid fa-check" *ngIf="draft.color === c.value"></i>
+          </button>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="pin-toggle"
+        [class.active]="draft.pinned"
+        (click)="togglePinDraft()"
+      >
+        <i class="fa-solid fa-thumbtack"></i>
+        <span>{{ draft.pinned ? 'Pinned to top' : 'Pin this note' }}</span>
+      </button>
+    </div>
+
+    <footer class="ed-foot">
+      <button type="button" class="ghost-btn" (click)="closeEditor()">Cancel</button>
+      <button type="button" class="primary-btn" (click)="save()">
+        <i class="fa-solid fa-floppy-disk"></i>
+        <span>{{ editing ? 'Save changes' : 'Create note' }}</span>
+      </button>
+    </footer>
+  </div>
+</div>

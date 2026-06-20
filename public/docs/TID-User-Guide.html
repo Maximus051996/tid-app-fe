@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>TID — User Guide v2.0.0</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="Sayan Pramanick" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="alternate icon" type="image/x-icon" href="../favicon.ico" />
+  <style>
+    :root {
+      --bg: #0d0f15;
+      --surface: #14161e;
+      --surface-2: #0a0c12;
+      --surface-3: #1a1d27;
+      --border: #1c1f29;
+      --text: #e6e8ed;
+      --text-soft: #c2c6d0;
+      --muted: #8b909e;
+      --accent: #22c55e;
+      --accent-2: #16a34a;
+      --info: #38bdf8;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+    @page { margin: 18mm 14mm; }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', system-ui, sans-serif;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    .page {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 3rem 2rem 4rem;
+    }
+    .cover {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 2rem;
+      margin-bottom: 2.5rem;
+    }
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      margin-bottom: 1.4rem;
+    }
+    .brand-mark {
+      width: 48px;
+      height: 48px;
+      flex-shrink: 0;
+      filter: drop-shadow(0 6px 14px rgba(34, 197, 94, 0.42));
+    }
+    .brand-name {
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: var(--text);
+    }
+    .eyebrow {
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1.6px;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+    h1 {
+      margin: 0.4rem 0 0.6rem;
+      font-size: 2.4rem;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #4ade80, #22c55e 60%, #16a34a);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .subtitle {
+      color: var(--text-soft);
+      font-size: 1.05rem;
+      margin: 0;
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.85rem 2rem;
+      margin-top: 1.5rem;
+      font-size: 0.92rem;
+    }
+    .meta-grid .k { color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; font-size: 0.72rem; font-weight: 700; }
+    .meta-grid .v { color: var(--text); font-weight: 600; }
+    h2 {
+      font-size: 1.5rem;
+      margin: 2.4rem 0 0.85rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+    h3 {
+      font-size: 1.12rem;
+      margin: 1.6rem 0 0.6rem;
+      color: var(--accent);
+    }
+    p, li { color: var(--text-soft); }
+    ul, ol { padding-left: 1.4rem; }
+    li { margin-bottom: 0.35rem; }
+    code {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.1rem 0.4rem;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.88em;
+      color: var(--text);
+    }
+    pre {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.85rem 1rem;
+      border-radius: 10px;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+    blockquote {
+      margin: 1rem 0;
+      padding: 0.85rem 1rem;
+      background: var(--surface);
+      border-left: 3px solid var(--accent);
+      border-radius: 8px;
+      color: var(--text-soft);
+    }
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.1rem 1.3rem;
+      margin: 1.5rem 0;
+    }
+    .toc h3 { margin: 0 0 0.5rem; color: var(--accent); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+    .toc ol { margin: 0; columns: 2; column-gap: 1.5rem; }
+    .toc li { margin-bottom: 0.25rem; font-size: 0.9rem; }
+    .toc a { color: var(--text-soft); text-decoration: none; }
+    .toc a:hover { color: var(--accent); }
+    .step {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.2rem;
+      margin: 0.85rem 0;
+    }
+    .step h4 {
+      margin: 0 0 0.4rem;
+      color: var(--text);
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+    .step-num {
+      display: inline-grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4ade80, #16a34a);
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+    .footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-align: center;
+    }
+    .footer .name {
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      background: rgba(34, 197, 94, 0.14);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.4);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      margin-left: 0.5rem;
+    }
+    .print-hint {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+      color: #bae6fd;
+    }
+    .print-hint strong { color: #fff; }
+    @media print {
+      .print-hint { display: none; }
+      body { background: #fff; color: #111; }
+      h1 { background: linear-gradient(135deg, #16a34a, #15803d); -webkit-background-clip: text; background-clip: text; color: transparent; }
+      h2, .step h4, p, li, .meta-grid .v, .brand-name { color: #111 !important; }
+      h3 { color: #15803d !important; }
+      .toc, .step, code, pre, blockquote { background: #f8fafc !important; border-color: #cbd5e1 !important; }
+      .footer .name { color: #15803d !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="print-hint">
+      <strong>Printable / PDF-friendly:</strong> Use your browser's print dialog (Ctrl/Cmd + P) and choose
+      "Save as PDF" to download this guide as a PDF file.
+    </div>
+
+    <header class="cover">
+      <div class="brand-row">
+        <svg class="brand-mark" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="ug-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#34d399" />
+              <stop offset="55%" stop-color="#22c55e" />
+              <stop offset="100%" stop-color="#15803d" />
+            </linearGradient>
+          </defs>
+          <rect width="48" height="48" rx="13" fill="url(#ug-grad)" />
+          <rect x="11" y="28" width="6" height="11" rx="2" fill="#fff" opacity="0.65" />
+          <rect x="21" y="22" width="6" height="17" rx="2" fill="#fff" opacity="0.85" />
+          <rect x="31" y="14" width="6" height="25" rx="2" fill="#fff" />
+          <circle cx="34" cy="9.5" r="2.6" fill="#fff" />
+        </svg>
+        <span class="brand-name">TID</span>
+      </div>
+      <span class="eyebrow">User Guide</span>
+      <h1>TID — Task &amp; Investment Decision <span class="badge">v2.0.0</span></h1>
+      <p class="subtitle">Step-by-step instructions for getting the most out of TID.</p>
+      <div class="meta-grid">
+        <div><span class="k">Version</span><br><span class="v">2.0.0 · Goals, Notes &amp; Co-pilot</span></div>
+        <div><span class="k">Release date</span><br><span class="v">June 20, 2026</span></div>
+        <div><span class="k">Developed by</span><br><span class="v">Sayan Pramanick</span></div>
+        <div><span class="k">Copyright</span><br><span class="v">© 2026 Sayan Pramanick. All rights reserved.</span></div>
+      </div>
+    </header>
+
+    <nav class="toc">
+      <h3>Contents</h3>
+      <ol>
+        <li><a href="#start">Getting started</a></li>
+        <li><a href="#tour">Tour of the workspace</a></li>
+        <li><a href="#goals">Goals</a></li>
+        <li><a href="#tasks">Tasks</a></li>
+        <li><a href="#notes">Notes</a></li>
+        <li><a href="#calendar">Calendar</a></li>
+        <li><a href="#investments">Investments</a></li>
+        <li><a href="#ai">AI Co-pilot</a></li>
+        <li><a href="#theme">Theme</a></li>
+        <li><a href="#admin">Admin tools</a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ol>
+    </nav>
+
+    <section id="start">
+      <h2>1 · Getting started</h2>
+      <div class="step">
+        <h4><span class="step-num">1</span> Open the app in any modern browser</h4>
+        <p>Browse to the URL where TID is hosted. The welcome screen has a Sign in / Create account toggle.</p>
+      </div>
+      <div class="step">
+        <h4><span class="step-num">2</span> Use a demo account or create your own</h4>
+        <ul>
+          <li><code>demo</code> · <code>Demo@123</code> — standard user with seed data</li>
+          <li><code>admin</code> · <code>Admin@123</code> — admin (sees the Admin Console)</li>
+        </ul>
+        <p>Or click <strong>Create account</strong>, supply email + 10-digit phone + password (8+ chars with letters and numbers), then sign in.</p>
+      </div>
+    </section>
+
+    <section id="tour">
+      <h2>2 · Tour of the workspace</h2>
+      <p>The sidebar lists every module in this order: <strong>Goals · Tasks · Notes · Calendar · Investments</strong>, plus <strong>Admin Console</strong> if you're an admin. Each row shows a live count.</p>
+      <p>The <strong>collapse handle</strong> on the seam shrinks the sidebar to icons only. The <strong>AI Co-pilot</strong> orb floats in the bottom-right corner.</p>
+    </section>
+
+    <section id="goals">
+      <h2>3 · Goals</h2>
+      <div class="step">
+        <h4><span class="step-num">1</span> Open Goals and click <strong>+ New goal</strong></h4>
+      </div>
+      <div class="step">
+        <h4><span class="step-num">2</span> Fill in the editor</h4>
+        <ul>
+          <li><strong>Title, Description</strong></li>
+          <li><strong>Category</strong> — Health / Learning / Finance / Career / Personal / Habit</li>
+          <li><strong>Target / Current / Unit</strong> — e.g. 300000 / 0 / ₹</li>
+          <li><strong>Start &amp; Due dates</strong></li>
+          <li><strong>Status</strong> — In progress / Completed / Paused</li>
+          <li><strong>Milestones</strong> — type label, press +, repeat</li>
+        </ul>
+      </div>
+      <div class="step">
+        <h4><span class="step-num">3</span> Track progress</h4>
+        <p>The <strong>+</strong> / <strong>-</strong> buttons bump current value. Click any milestone to toggle done. The ring auto-completes the goal when target is reached.</p>
+      </div>
+    </section>
+
+    <section id="tasks">
+      <h2>4 · Tasks</h2>
+      <div class="step">
+        <h4><span class="step-num">1</span> Click <strong>Add Task</strong></h4>
+        <p>Subject, description, priority (Low / Medium / High), start &amp; end dates, reminder, status, and optional subtasks.</p>
+      </div>
+      <div class="step">
+        <h4><span class="step-num">2</span> Quick-create from the AI</h4>
+        <pre>task: review portfolio !high @tomorrow</pre>
+        <p>Modifiers: <code>!high</code>, <code>!medium</code>, <code>!low</code> · <code>@today</code>, <code>@tomorrow</code>, <code>@YYYY-MM-DD</code>.</p>
+      </div>
+      <div class="step">
+        <h4><span class="step-num">3</span> View / edit / delete</h4>
+        <p>Eye / pencil / trash icons in each row. Trash always shows a confirmation dialog.</p>
+      </div>
+    </section>
+
+    <section id="notes">
+      <h2>5 · Notes</h2>
+      <div class="step">
+        <h4><span class="step-num">1</span> Click <strong>+ New note</strong></h4>
+        <p>Title, body, comma-separated tags, color swatch, pin toggle.</p>
+      </div>
+      <div class="step">
+        <h4><span class="step-num">2</span> Pin to keep it on top</h4>
+        <p>Hover any card and click the thumbtack. Pinned notes get their own section.</p>
+      </div>
+      <div class="step">
+        <h4><span class="step-num">3</span> Quick-create from the AI</h4>
+        <pre>note: Title | body text</pre>
+        <p>The <code>|</code> splits title from body. Either side can be empty.</p>
+      </div>
+    </section>
+
+    <section id="calendar">
+      <h2>6 · Calendar</h2>
+      <p>Month view with task chips on each day. Click a day to open a side panel; click any chip to drill into the task. The <strong>+</strong> on the calendar toolbar adds a task pre-filled to that day.</p>
+    </section>
+
+    <section id="investments">
+      <h2>7 · Investments</h2>
+      <div class="step">
+        <h4><span class="step-num">1</span> Click <strong>+ Add Investment</strong></h4>
+        <p>Name, type (Stock / Mutual Fund / FD / Bond / Real Estate / Crypto / Other), amount, current value, dates, risk, status, notes.</p>
+      </div>
+      <div class="step">
+        <h4><span class="step-num">2</span> Read the dashboard</h4>
+        <p>Total invested, current value, gain / loss, allocation pie chart, performance bars.</p>
+      </div>
+    </section>
+
+    <section id="ai">
+      <h2>8 · AI Co-pilot</h2>
+      <div class="step">
+        <h4><span class="step-num">1</span> Open the orb in the bottom-right</h4>
+      </div>
+      <div class="step">
+        <h4><span class="step-num">2</span> Tap the <strong>sun icon</strong> for a daily briefing</h4>
+        <p>Single composed message across tasks, goals, investments, and your streak.</p>
+      </div>
+      <div class="step">
+        <h4><span class="step-num">3</span> Quick-create commands</h4>
+<pre>task: review portfolio !high @tomorrow
+note: Title | body text
+goal: Save for laptop target 80000 ₹</pre>
+      </div>
+      <div class="step">
+        <h4><span class="step-num">4</span> Suggestions and snooze</h4>
+        <p>Each card has a CTA button (Mark done / Bump +1 / View) and a bed icon to snooze it until tomorrow.</p>
+      </div>
+      <div class="step">
+        <h4><span class="step-num">5</span> Settings (gear icon)</h4>
+        <p>Auto-scan toggle, interval (15/30/60 min), Daily briefing toggle, and a quick-create cheat-sheet.</p>
+      </div>
+    </section>
+
+    <section id="theme">
+      <h2>9 · Theme</h2>
+      <p>Toggle Light / Dark from the sidebar's Account section (or the mobile topbar). Choice persists across sessions.</p>
+    </section>
+
+    <section id="admin">
+      <h2>10 · Admin tools</h2>
+      <div class="step">
+        <h4><span class="step-num">1</span> User directory</h4>
+        <p>Search, Promote / Demote, Remove (cascades through tasks, investments, notes, goals).</p>
+      </div>
+      <div class="step">
+        <h4><span class="step-num">2</span> Reset data picker</h4>
+        <ul>
+          <li><strong>Wipe a user's data</strong> — pick a user, clear their data, leave login intact</li>
+          <li><strong>Reset everything</strong> — type <code>RESET</code> to confirm, ends session</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="faq">
+      <h2>11 · FAQ</h2>
+      <p><strong>Where is my data stored?</strong> Locally, in your browser's localStorage, AES-256-GCM encrypted.</p>
+      <p><strong>Will it sync across devices?</strong> No — TID is frontend-only.</p>
+      <p><strong>Are passwords secure?</strong> PBKDF2-SHA-256, 200,000 iterations, per-user salt.</p>
+      <p><strong>Will clearing my browser cache delete my data?</strong> Yes. Be sure before doing that.</p>
+    </section>
+
+    <footer class="footer">
+      <p>
+        TID v2.0.0 · Developed by <span class="name">Sayan Pramanick</span><br>
+        © 2026 Sayan Pramanick. All rights reserved.
+      </p>
+    </footer>
+  </div>
+</body>
+</html>

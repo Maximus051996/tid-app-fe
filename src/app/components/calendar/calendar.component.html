@@ -1,0 +1,263 @@
+<div class="page">
+  <!-- Hero -->
+  <header class="hero">
+    <div>
+      <span class="eyebrow">Schedule</span>
+      <h1>Calendar</h1>
+      <p class="lede">
+        <i class="fa-regular fa-calendar"></i> {{ todayEventsCount() }} events today
+        <span class="dot-sep">•</span>
+        Click any day to drill down, click an event to see full details.
+      </p>
+    </div>
+    <button class="primary-btn" (click)="addOnDay({ date: cursor, iso: toIsoCursor(), inMonth: true, isToday: false, events: [] })">
+      <i class="fa-solid fa-plus"></i>
+      <span>New Event</span>
+    </button>
+  </header>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="nav">
+      <button class="nav-btn" (click)="prev()" aria-label="Previous">
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+      <button class="today-btn" (click)="goToday()">Today</button>
+      <button class="nav-btn" (click)="next()" aria-label="Next">
+        <i class="fa-solid fa-chevron-right"></i>
+      </button>
+      <span class="month-label">
+        {{ view === 'month' ? monthLabel() : weekLabel() }}
+      </span>
+    </div>
+
+    <div class="toolbar-right">
+      <div class="search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input
+          type="text"
+          placeholder="Search events..."
+          [(ngModel)]="searchText"
+          (input)="applySearch()"
+        />
+      </div>
+      <div class="view-switch">
+        <button [class.active]="view === 'month'" (click)="setView('month')">Month</button>
+        <button [class.active]="view === 'week'" (click)="setView('week')">Week</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Two-column shell -->
+  <div class="shell">
+    <!-- Calendar surface -->
+    <section class="calendar-card" [class.with-detail]="!!selectedTask">
+      <!-- Month -->
+      <ng-container *ngIf="view === 'month'">
+        <div class="weekday-row">
+          <span *ngFor="let d of weekDays">{{ d }}</span>
+        </div>
+        <div class="month-grid">
+          <button
+            *ngFor="let cell of monthCells"
+            type="button"
+            class="day-cell"
+            [class.out]="!cell.inMonth"
+            [class.today]="cell.isToday"
+            [class.active]="selectedDay?.iso === cell.iso"
+            (click)="selectDay(cell)"
+          >
+            <div class="day-head">
+              <span class="day-num">{{ cell.date.getDate() }}</span>
+              <span class="event-count" *ngIf="cell.events.length > 0">{{ cell.events.length }}</span>
+            </div>
+            <ul class="event-list">
+              <li
+                *ngFor="let ev of cell.events.slice(0, 3)"
+                class="event"
+                [ngClass]="priorityClass(ev.priority)"
+                [class.completed]="ev.taskStatus === 'completed'"
+                [class.overdue]="isOverdue(ev)"
+                (click)="selectTask(ev, $event)"
+              >
+                <span class="dot"></span>
+                <span class="title">{{ ev.subject }}</span>
+              </li>
+              <li class="more" *ngIf="cell.events.length > 3">
+                +{{ cell.events.length - 3 }} more
+              </li>
+            </ul>
+          </button>
+        </div>
+      </ng-container>
+
+      <!-- Week -->
+      <ng-container *ngIf="view === 'week'">
+        <div class="week-grid">
+          <div class="week-col" *ngFor="let cell of weekCells" [class.today]="cell.isToday">
+            <header (click)="selectDay(cell)" [class.active]="selectedDay?.iso === cell.iso">
+              <span class="weekday">{{ weekDays[(cell.date.getDay() + 6) % 7] }}</span>
+              <span class="weeknum">{{ cell.date.getDate() }}</span>
+            </header>
+            <div class="week-events">
+              <article
+                *ngFor="let ev of cell.events"
+                class="week-event"
+                [ngClass]="priorityClass(ev.priority)"
+                [class.completed]="ev.taskStatus === 'completed'"
+                [class.overdue]="isOverdue(ev)"
+                (click)="selectTask(ev, $event)"
+              >
+                <span class="time">{{ ev.endDate | date:'shortTime' }}</span>
+                <strong>{{ ev.subject }}</strong>
+                <small>{{ ev.priority }} · {{ ev.taskStatus }}</small>
+              </article>
+              <div class="empty" *ngIf="cell.events.length === 0">No events</div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </section>
+
+    <!-- Side panel: selected day list OR task drill-down -->
+    <aside class="side-panel" *ngIf="selectedDay">
+      <ng-container *ngIf="!selectedTask; else detailTpl">
+        <header class="side-head">
+          <div>
+            <span class="eyebrow-side">{{ selectedDay.date | date:'EEEE' }}</span>
+            <h3>{{ selectedDay.date | date:'MMMM d, y' }}</h3>
+          </div>
+          <button class="ghost-btn" (click)="addOnDay(selectedDay)" title="Add event for this day">
+            <i class="fa-solid fa-plus"></i>
+          </button>
+        </header>
+
+        <div class="side-body" *ngIf="selectedDay.events.length > 0; else dayEmpty">
+          <article
+            *ngFor="let ev of selectedDay.events"
+            class="day-event"
+            [ngClass]="priorityClass(ev.priority)"
+            [class.completed]="ev.taskStatus === 'completed'"
+            [class.overdue]="isOverdue(ev)"
+            (click)="selectTask(ev)"
+          >
+            <div class="time-rail">
+              <span class="time">{{ ev.endDate | date:'shortTime' }}</span>
+              <span class="status-dot"></span>
+            </div>
+            <div class="event-body">
+              <strong>{{ ev.subject }}</strong>
+              <small>{{ ev.description || 'No description' }}</small>
+              <div class="event-meta">
+                <span class="pill" [ngClass]="priorityClass(ev.priority)">{{ ev.priority }}</span>
+                <span class="pill status status-{{ statusKey(ev) }}">
+                  {{ statusKey(ev) === 'overdue' ? 'Overdue' : ev.taskStatus }}
+                </span>
+              </div>
+            </div>
+            <i class="fa-solid fa-chevron-right chev"></i>
+          </article>
+        </div>
+        <ng-template #dayEmpty>
+          <div class="side-empty">
+            <div class="side-empty-icon">
+              <i class="fa-regular fa-calendar-check"></i>
+            </div>
+            <p class="side-empty-text">Nothing scheduled for this day.</p>
+            <button class="primary-btn small" (click)="addOnDay(selectedDay)">
+              <i class="fa-solid fa-plus"></i>
+              <span>Add event</span>
+            </button>
+          </div>
+        </ng-template>
+      </ng-container>
+
+      <!-- Drill-down detail -->
+      <ng-template #detailTpl>
+        <header class="side-head detail">
+          <button class="ghost-btn" (click)="closeDetail()">
+            <i class="fa-solid fa-arrow-left"></i> Back
+          </button>
+          <span class="pill" [ngClass]="priorityClass(selectedTask!.priority)">{{ selectedTask!.priority }}</span>
+        </header>
+
+        <div class="side-body detail">
+          <h2 class="detail-title">{{ selectedTask!.subject }}</h2>
+          <div class="status-row">
+            <span class="pill status status-{{ statusKey(selectedTask!) }}">
+              <i
+                class="fa-solid"
+                [ngClass]="{
+                  'fa-circle-check': statusKey(selectedTask!) === 'completed',
+                  'fa-spinner': statusKey(selectedTask!) === 'partiallyCompleted',
+                  'fa-hourglass-start': statusKey(selectedTask!) === 'notStarted',
+                  'fa-triangle-exclamation': statusKey(selectedTask!) === 'overdue'
+                }"
+              ></i>
+              {{ statusKey(selectedTask!) === 'overdue' ? 'Overdue' : selectedTask!.taskStatus }}
+            </span>
+            <span class="pill" *ngIf="selectedTask!.isRemainder">
+              <i class="fa-regular fa-bell"></i> Reminder
+            </span>
+          </div>
+
+          <p class="description" *ngIf="selectedTask!.description">{{ selectedTask!.description }}</p>
+
+          <div class="detail-grid">
+            <div>
+              <span class="label">Start</span>
+              <strong>{{ selectedTask!.startDate | date:'medium' }}</strong>
+            </div>
+            <div>
+              <span class="label">End</span>
+              <strong>{{ selectedTask!.endDate | date:'medium' }}</strong>
+            </div>
+          </div>
+
+          <div *ngIf="selectedTask!.subtasks?.length">
+            <span class="label">Sub-tasks</span>
+            <ul class="subtasks">
+              <li *ngFor="let s of selectedTask!.subtasks">
+                <i class="fa-regular fa-square-check"></i> {{ s }}
+              </li>
+            </ul>
+          </div>
+
+          <div class="detail-actions">
+            <button class="primary-btn" (click)="openTask(selectedTask!)">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i>
+              <span>Open full view</span>
+            </button>
+            <button class="ghost-btn" (click)="editTask(selectedTask!)">
+              <i class="fa-solid fa-pen"></i> Edit
+            </button>
+          </div>
+        </div>
+      </ng-template>
+    </aside>
+  </div>
+
+  <!-- Upcoming -->
+  <section class="upcoming-strip" *ngIf="upcomingThisMonth().length > 0">
+    <header>
+      <h2><i class="fa-regular fa-clock"></i> Upcoming this month</h2>
+    </header>
+    <div class="upcoming-list">
+      <article
+        *ngFor="let t of upcomingThisMonth()"
+        class="up-card"
+        [ngClass]="priorityClass(t.priority)"
+        (click)="selectTask(t)"
+      >
+        <div class="up-date">
+          <span class="up-month">{{ t.endDate | date:'MMM' }}</span>
+          <span class="up-day">{{ t.endDate | date:'d' }}</span>
+        </div>
+        <div class="up-body">
+          <strong>{{ t.subject }}</strong>
+          <small>{{ t.endDate | date:'shortTime' }} · {{ t.priority }}</small>
+        </div>
+      </article>
+    </div>
+  </section>
+</div>

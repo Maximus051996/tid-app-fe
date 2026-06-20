@@ -1,15 +1,29 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { NgxPaginationModule } from 'ngx-pagination';
 import { NgxSpinnerModule } from 'ngx-spinner';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+
 import { TaskService } from '../../../services/task/task.service';
-import { Router } from '@angular/router';
 import { DataService } from '../../../services/data/data.service';
 import { AuthService } from '../../../services/auth/auth.service';
-import * as Highcharts from 'highcharts';
-import { HighchartsChartModule } from 'highcharts-angular';
 import { SentenceCasePipe } from '../../../pipes/sentence-case.pipe';
+import { Task } from '../../../models/models';
+import { ConfirmDialogService } from '../../confirm-dialog/confirm-dialog.service';
+
+interface DayCell {
+  label: string;          // Mon, Tue ...
+  dateLabel: string;      // 12
+  monthLabel: string;     // Jun
+  isToday: boolean;
+  count: number;
+  highCount: number;
+  iso: string;            // YYYY-MM-DD
+}
+
 @Component({
   selector: 'app-tasklist',
   standalone: true,
@@ -18,399 +32,371 @@ import { SentenceCasePipe } from '../../../pipes/sentence-case.pipe';
     CommonModule,
     NgxPaginationModule,
     FormsModule,
-    HighchartsChartModule,
     SentenceCasePipe,
   ],
   templateUrl: './tasklist.component.html',
   styleUrl: './tasklist.component.scss',
 })
-export class TasklistComponent implements OnInit {
-  Highcharts = Highcharts;
-  chartOptions: any;
-  barchartOptions: any;
-  items: any[] = []; // Initialize items as an empty array
-  highpriority: number = 0;
-  lowpriority: number = 0;
-  mediumpriority: number = 0;
-  donepriority: number = 0;
-  pendingTasks: number = 0;
-  notStartedTasks: number = 0;
-  partiallyCompletedTasks: number = 0;
-  completedTasks: number = 0;
-  currentDate!: Date;
+export class TasklistComponent implements OnInit, OnDestroy {
+  items: Task[] = [];
+
+  // Priority KPIs (only count active, non-deleted)
+  highCount = 0;
+  mediumCount = 0;
+  lowCount = 0;
+
+  // Status KPIs
+  wipCount = 0;       // partiallyCompleted
+  finishedCount = 0;  // completed
+  notCompletedCount = 0; // notStarted
+
+  overdueCount = 0;
+
+  searchText = '';
+  statusFilter: 'all' | 'notStarted' | 'partiallyCompleted' | 'completed' | 'overdue' = 'all';
+  currentPage = 1;
+  itemsPerPage = 6;
+
+  // Day-to-day activity strip (today + next 6 days)
+  weekStrip: DayCell[] = [];
+  selectedDayIso: string | null = null;
+
+  // Activity panels
+  todaysTasks: Task[] = [];
+  overdueTasks: Task[] = [];
+  upcomingTasks: Task[] = [];
+  recentlyCompleted: Task[] = [];
+
+  greeting = '';
+  userName = '';
+  todayLabel = '';
+
+  private readonly destroy$ = new Subject<void>();
+  private spinnerTimer: ReturnType<typeof setTimeout> | null = null;
+
   constructor(
     private taskService: TaskService,
     private dataService: DataService,
     private router: Router,
-    private authService: AuthService
-  ) {
-    this.currentDate = new Date();
-    this.getTaskDetails();
+    private authService: AuthService,
+    private confirmDialog: ConfirmDialogService
+  ) {}
+
+  ngOnInit(): void {
+    this.userName = this.authService.getUserName() ?? '';
+    this.greeting = this.greetingFor(new Date());
+    this.todayLabel = new Date().toLocaleDateString(undefined, {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+    this.loadTasks();
   }
 
-  ngOnInit(): void {}
+  // ---------- Data ----------
 
-  searchText = '';
-  currentPage = 1;
-  itemsPerPage = 6;
-
-  addItem() {
-    this.router.navigate(['/add-task']);
-  }
-
-  get filteredItems() {
-    return this.items.filter((item) =>
-      item.subject.toLowerCase().includes(this.searchText.toLowerCase())
-    );
-  }
-
-  editviewDetails(id: any, operation: any) {
+  loadTasks(): void {
     this.authService.showSpinner();
-    const responseObservable = this.taskService.gettaskbyId(id);
-    responseObservable.subscribe(
-      (res: any) => {
-        this.authService.hideSpinner();
-        if (operation == 'Edit') {
-          this.router.navigate(['/edit-task', id]);
-        } else if (operation == 'View') {
-          this.router.navigate(['/view-task', id]);
-        }
-      },
-      (err) => {
-        this.dataService.showerrorToaster(err.message);
-        this.authService.hideSpinner();
-      }
-    );
+    this.taskService
+      .getallTasks()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.items = res;
+          this.computeStats();
+          this.buildWeekStrip();
+          this.buildActivityPanels();
+
+          // open-task count for the side nav badge
+          const open = res.filter(
+            (t) => !t.isDeleted && t.taskStatus !== 'completed'
+          ).length;
+          this.dataService.changeData(open);
+
+          if (this.spinnerTimer) clearTimeout(this.spinnerTimer);
+          this.spinnerTimer = setTimeout(() => {
+            this.authService.hideSpinner();
+            this.spinnerTimer = null;
+          }, 200);
+        },
+        error: (err: Error) => {
+          this.dataService.showerrorToaster(err.message);
+          this.authService.hideSpinner();
+        },
+      });
   }
 
-  getCardClass(
-    priority: string,
-    isDeleted: boolean,
-    taskStatus: string
-  ): string {
-    if (isDeleted) {
-      return 'bg-light text-dark';
-    }
+  ngOnDestroy(): void {
+    if (this.spinnerTimer) clearTimeout(this.spinnerTimer);
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
-    if (taskStatus === 'completed') {
-      return 'bg-success text-white';
-    }
-    switch (priority) {
-      case 'High':
-        return 'bg-danger text-white';
-      case 'Medium':
-        return 'bg-warning text-dark';
-      case 'Low':
-        return 'bg-primary text-white';
-      case 'Done':
-        return 'bg-success text-white';
-      default:
-        return 'bg-light text-dark';
+  // ---------- Derived data ----------
+
+  private computeStats(): void {
+    const live = this.items.filter((t) => !t.isDeleted);
+
+    this.highCount = live.filter(
+      (t) => t.priority === 'High' && t.taskStatus !== 'completed'
+    ).length;
+    this.mediumCount = live.filter(
+      (t) => t.priority === 'Medium' && t.taskStatus !== 'completed'
+    ).length;
+    this.lowCount = live.filter(
+      (t) => t.priority === 'Low' && t.taskStatus !== 'completed'
+    ).length;
+
+    this.wipCount = live.filter((t) => t.taskStatus === 'partiallyCompleted').length;
+    this.finishedCount = live.filter((t) => t.taskStatus === 'completed').length;
+    this.notCompletedCount = live.filter((t) => t.taskStatus === 'notStarted').length;
+
+    const now = new Date();
+    this.overdueCount = live.filter(
+      (t) => t.taskStatus !== 'completed' && new Date(t.endDate) < now
+    ).length;
+  }
+
+  private buildWeekStrip(): void {
+    const now = new Date();
+    const today = this.startOfDay(now);
+    const live = this.items.filter((t) => !t.isDeleted);
+
+    this.weekStrip = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      const iso = this.toIsoDate(d);
+
+      const dayTasks = live.filter((t) => this.toIsoDate(new Date(t.endDate)) === iso);
+
+      return {
+        label: d.toLocaleDateString(undefined, { weekday: 'short' }),
+        dateLabel: String(d.getDate()),
+        monthLabel: d.toLocaleDateString(undefined, { month: 'short' }),
+        isToday: i === 0,
+        count: dayTasks.length,
+        highCount: dayTasks.filter((t) => t.priority === 'High').length,
+        iso,
+      };
+    });
+
+    if (!this.selectedDayIso) {
+      this.selectedDayIso = this.weekStrip[0].iso;
     }
   }
 
-  deleteItem(id: any) {
-    this.authService.showSpinner();
-    this.taskService.deleteTask(id).subscribe((res: any) => {
-      if (res.message) {
-        this.getTaskDetails();
+  private buildActivityPanels(): void {
+    const now = new Date();
+    const todayIso = this.toIsoDate(now);
+    const live = this.items.filter((t) => !t.isDeleted);
+
+    this.todaysTasks = live
+      .filter(
+        (t) =>
+          t.taskStatus !== 'completed' &&
+          this.toIsoDate(new Date(t.endDate)) === todayIso
+      )
+      .sort((a, b) => this.priorityWeight(b.priority) - this.priorityWeight(a.priority));
+
+    this.overdueTasks = live
+      .filter(
+        (t) =>
+          t.taskStatus !== 'completed' &&
+          new Date(t.endDate) < this.startOfDay(now)
+      )
+      .sort((a, b) => +new Date(a.endDate) - +new Date(b.endDate));
+
+    const thirtyDaysOut = new Date(now);
+    thirtyDaysOut.setDate(now.getDate() + 30);
+    this.upcomingTasks = live
+      .filter((t) => {
+        if (t.taskStatus === 'completed') return false;
+        const end = new Date(t.endDate);
+        return end >= this.startOfDay(now) && end <= thirtyDaysOut;
+      })
+      .sort((a, b) => +new Date(a.endDate) - +new Date(b.endDate))
+      .slice(0, 5);
+
+    const weekAgo = new Date(now);
+    weekAgo.setDate(now.getDate() - 7);
+    this.recentlyCompleted = live
+      .filter(
+        (t) =>
+          t.taskStatus === 'completed' &&
+          new Date(t.updatedAt) >= weekAgo
+      )
+      .sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt))
+      .slice(0, 5);
+  }
+
+  // ---------- Filtering ----------
+
+  get filteredItems(): Task[] {
+    const now = new Date();
+    return this.items.filter((t) => {
+      const matchesText = t.subject
+        .toLowerCase()
+        .includes(this.searchText.toLowerCase());
+      let matchesStatus = true;
+      switch (this.statusFilter) {
+        case 'notStarted':
+          matchesStatus = t.taskStatus === 'notStarted';
+          break;
+        case 'partiallyCompleted':
+          matchesStatus = t.taskStatus === 'partiallyCompleted';
+          break;
+        case 'completed':
+          matchesStatus = t.taskStatus === 'completed';
+          break;
+        case 'overdue':
+          matchesStatus =
+            t.taskStatus !== 'completed' && new Date(t.endDate) < now;
+          break;
       }
+      return matchesText && matchesStatus;
     });
   }
 
-  getTaskDetails() {
+  setFilter(filter: typeof this.statusFilter): void {
+    this.statusFilter = filter;
+    this.currentPage = 1;
+  }
+
+  // ---------- Navigation / actions ----------
+
+  addItem(): void {
+    this.router.navigate(['/add-task']);
+  }
+
+  view(id: string): void {
+    this.router.navigate(['/view-task', id]);
+  }
+
+  edit(id: string): void {
+    this.router.navigate(['/edit-task', id]);
+  }
+
+  async deleteItem(id: string): Promise<void> {
+    const task = this.items.find((t) => t._id === id);
+    const ok = await this.confirmDialog.ask({
+      eyebrow: 'Delete task',
+      title: task ? `Delete "${task.subject}"?` : 'Delete task?',
+      message:
+        'This task will be moved to the deleted state and removed from your active lists.',
+      tone: 'danger',
+      confirmLabel: 'Delete task',
+      icon: 'fa-solid fa-trash',
+    });
+    if (!ok) return;
     this.authService.showSpinner();
-    const responseObservable = this.taskService.getallTasks();
-    responseObservable.subscribe(
-      (res: any) => {
-        let layoutData = res.filter(
-          (task: any) =>
-            task.isDeleted == false && task.taskStatus != 'completed'
-        );
-        this.completedTasks = res.filter(
-          (task: any) =>
-            task.taskStatus == 'completed' && task.isDeleted == false
-        ).length;
-        this.partiallyCompletedTasks = res.filter(
-          (task: any) =>
-            task.taskStatus == 'partiallyCompleted' && task.isDeleted == false
-        ).length;
-        this.notStartedTasks = res.filter(
-          (task: any) =>
-            task.taskStatus == 'notStarted' && task.isDeleted == false
-        ).length;
-        console.log(this.currentDate);
-        this.pendingTasks = res.filter(
-          (task: any) =>
-            new Date(task.endDate) <= this.currentDate &&
-            task.taskStatus != 'completed' &&
-            task.isDeleted == false
-        ).length;
-        this.highpriority = layoutData.filter(
-          (task: any) => task.priority == 'High'
-        ).length;
-        this.lowpriority = layoutData.filter(
-          (task: any) => task.priority == 'Low'
-        ).length;
-        this.mediumpriority = layoutData.filter(
-          (task: any) => task.priority == 'Medium'
-        ).length;
-        this.donepriority = res.filter(
-          (task: any) =>
-            task.isDeleted == false && task.taskStatus == 'completed'
-        ).length;
-        this.dataService.changeData(layoutData.length);
-        this.items = res;
-        this.chartDetails();
-        setTimeout(() => {
+    this.taskService
+      .deleteTask(id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          if (res.message) this.loadTasks();
+          this.dataService.showSuccessToasterMsg(res.message);
+        },
+        error: (err: Error) => {
+          this.dataService.showerrorToaster(err.message);
           this.authService.hideSpinner();
-        }, 500);
-      },
-      (err) => {
-        this.dataService.showerrorToaster(err.message);
-        setTimeout(() => {
-          this.authService.hideSpinner();
-        }, 2000);
-      }
+        },
+      });
+  }
+
+  selectDay(iso: string): void {
+    this.selectedDayIso = iso;
+    const cell = this.weekStrip.find((c) => c.iso === iso);
+    if (!cell) return;
+    if (cell.isToday) {
+      this.statusFilter = 'all';
+      return;
+    }
+  }
+
+  tasksForSelectedDay(): Task[] {
+    if (!this.selectedDayIso) return [];
+    return this.items
+      .filter((t) => !t.isDeleted)
+      .filter((t) => this.toIsoDate(new Date(t.endDate)) === this.selectedDayIso)
+      .sort((a, b) => this.priorityWeight(b.priority) - this.priorityWeight(a.priority));
+  }
+
+  // ---------- UI helpers ----------
+
+  isOverdue(task: Task): boolean {
+    return (
+      task.taskStatus !== 'completed' && new Date(task.endDate) < new Date()
     );
   }
 
-  chartDetails() {
-    // pie chart
-    this.chartOptions = {
-      chart: {
-        type: 'pie', // Use 'pie' type to create a donut chart
-        backgroundColor: '#f4f4f4', // Light background color for contrast
-        borderRadius: 10, // Rounded corners for the chart area
-        spacing: [10, 10, 15, 10], // Adjust spacing around the chart
-      },
-      title: {
-        text: 'Visual Task Priority Analysis',
-        style: {
-          color: '#333333', // Dark title color for readability
-          fontSize: '18px',
-          fontWeight: 'bold',
-        },
-      },
-      series: [
-        {
-          name: 'Priorities',
-          data: [
-            ['High', this.highpriority],
-            ['Medium', this.mediumpriority],
-            ['Low', this.lowpriority],
-          ],
-          innerSize: '50%', // Creates a donut chart
-          colors: ['#FF5733', '#FFC300', '#6495ED'], // Custom colors for segments
-          dataLabels: {
-            enabled: true,
-            format: '{point.name}: {point.percentage:.1f}%', // Show percentage with one decimal place
-            style: {
-              color: '#333333', // Color of data labels
-              fontSize: '12px',
-            },
-          },
-        },
-      ],
-      plotOptions: {
-        pie: {
-          allowPointSelect: true,
-          cursor: 'pointer',
-          dataLabels: {
-            enabled: true,
-            connectorColor: '#333333', // Color of the connector lines
-          },
-          borderWidth: 1, // Border width of pie slices
-          borderColor: '#ffffff', // Border color of pie slices
-        },
-      },
-      legend: {
-        enabled: true, // Show legend for better understanding
-        align: 'right',
-        verticalAlign: 'middle',
-        layout: 'vertical',
-        itemStyle: {
-          color: '#333333', // Color of legend items
-          fontSize: '12px',
-        },
-      },
-      credits: {
-        enabled: false, // Disable Highcharts credit label
-      },
-      tooltip: {
-        backgroundColor: '#333333', // Custom tooltip background
-        style: {
-          color: '#ffffff', // Tooltip text color
-        },
-        pointFormat:
-          '{series.name}: <b>{point.y}</b><br/>Percentage: <b>{point.percentage:.1f}%</b>', // Enhanced tooltip format
-      },
-      responsive: {
-        rules: [
-          {
-            condition: {
-              maxWidth: 500, // Apply changes for screens 500px wide or less
-            },
-            chartOptions: {
-              title: {
-                style: {
-                  fontSize: '16px', // Smaller title font size
-                },
-              },
-              series: [
-                {
-                  dataLabels: {
-                    style: {
-                      fontSize: '10px', // Smaller font size for data labels on small screens
-                    },
-                  },
-                },
-              ],
-              legend: {
-                align: 'center',
-                verticalAlign: 'bottom',
-                layout: 'horizontal',
-                itemStyle: {
-                  fontSize: '10px', // Smaller font size for legend items on small screens
-                },
-              },
-              tooltip: {
-                style: {
-                  fontSize: '10px', // Smaller font size for tooltips on small screens
-                },
-              },
-            },
-          },
-        ],
-      },
-    };
+  priorityClass(priority: string): string {
+    switch (priority) {
+      case 'High': return 'p-high';
+      case 'Medium': return 'p-medium';
+      default: return 'p-low';
+    }
+  }
 
-    // bar chart
-    this.barchartOptions = {
-      chart: {
-        type: 'bar',
-        backgroundColor: '#f9f9f9', // Light background color for better contrast
-        borderRadius: 10, // Rounded corners for the chart
-        spacing: [10, 10, 15, 10], // Adjust spacing for better aesthetics
-      },
-      title: {
-        text: 'Task Status Breakdown',
-        style: {
-          color: '#333333', // Custom title color
-          fontSize: '18px',
-          fontWeight: 'bold',
-        },
-      },
-      xAxis: {
-        categories: [
-          'Not Started',
-          'Partially Completed',
-          'Completed',
-          'Overdue',
-        ],
-        title: {
-          text: null,
-        },
-        labels: {
-          style: {
-            color: '#333333', // Custom label color
-            fontSize: '14px',
-          },
-        },
-      },
-      yAxis: {
-        min: 0,
-        title: {
-          text: 'Number of Tasks',
-          align: 'high',
-          style: {
-            color: '#333333',
-            fontSize: '14px',
-          },
-        },
-        labels: {
-          style: {
-            color: '#333333', // Custom label color
-            fontSize: '12px',
-          },
-        },
-      },
-      plotOptions: {
-        bar: {
-          dataLabels: {
-            enabled: true,
-            color: '#333333', // Label color for the bar data values
-            style: {
-              fontSize: '12px',
-              fontWeight: 'bold',
-            },
-          },
-          borderRadius: 5, // Rounded edges for the bars
-        },
-      },
-      series: [
-        {
-          name: 'Tasks',
-          data: [
-            this.notStartedTasks,
-            this.partiallyCompletedTasks,
-            this.completedTasks,
-            this.pendingTasks,
-          ],
-          colorByPoint: true, // Allows each bar to have a different color
-          colors: ['#36454F', '#FFC300', '#33FF57', '#FF3333'], // Custom colors for each status
-        },
-      ],
-      legend: {
-        enabled: false,
-      },
-      credits: {
-        enabled: false,
-      },
-      tooltip: {
-        backgroundColor: '#333333', // Custom tooltip background
-        style: {
-          color: '#ffffff', // Tooltip text color
-        },
-        pointFormat: 'Tasks: <b>{point.y}</b>',
-      },
-      responsive: {
-        rules: [
-          {
-            condition: {
-              maxWidth: 500, // Chart will adjust when the screen width is 500px or less
-            },
-            chartOptions: {
-              chart: {
-                height: 300, // Reduce height for smaller screens
-              },
-              xAxis: {
-                labels: {
-                  style: {
-                    fontSize: '10px', // Smaller font for smaller screens
-                  },
-                },
-              },
-              yAxis: {
-                labels: {
-                  style: {
-                    fontSize: '10px', // Smaller font for smaller screens
-                  },
-                },
-              },
-              plotOptions: {
-                bar: {
-                  dataLabels: {
-                    style: {
-                      fontSize: '10px', // Smaller data labels for small screens
-                    },
-                  },
-                },
-              },
-            },
-          },
-        ],
-      },
-    };
+  statusKey(task: Task): 'completed' | 'partiallyCompleted' | 'notStarted' | 'overdue' {
+    if (task.taskStatus === 'completed') return 'completed';
+    if (this.isOverdue(task)) return 'overdue';
+    return task.taskStatus;
+  }
+
+  daysUntil(date: string): string {
+    const target = this.startOfDay(new Date(date));
+    const today = this.startOfDay(new Date());
+    const diff = Math.round((+target - +today) / (1000 * 60 * 60 * 24));
+    if (diff === 0) return 'Today';
+    if (diff === 1) return 'Tomorrow';
+    if (diff === -1) return 'Yesterday';
+    if (diff > 1) return `In ${diff} days`;
+    return `${Math.abs(diff)} days ago`;
+  }
+
+  /** True when none of the three activity panels has anything to show. */
+  hasActivity(): boolean {
+    return (
+      this.todaysTasks.length > 0 ||
+      this.overdueTasks.length > 0 ||
+      this.upcomingTasks.length > 0
+    );
+  }
+
+  /** Header subtext for the "Coming up" panel — adapts to what was found. */
+  upcomingSubtitle(): string {
+    if (this.upcomingTasks.length === 0) return 'Nothing scheduled';
+    return `Next ${this.upcomingTasks.length} of ${this.openCount()}`;
+  }
+
+  /** Total open (non-completed, non-deleted) tasks. */
+  openCount(): number {
+    return this.items.filter((t) => !t.isDeleted && t.taskStatus !== 'completed').length;
+  }
+
+  // ---------- Date utils ----------
+
+  private startOfDay(d: Date): Date {
+    const c = new Date(d);
+    c.setHours(0, 0, 0, 0);
+    return c;
+  }
+
+  private toIsoDate(d: Date): string {
+    const pad = (n: number) => (n < 10 ? '0' + n : n);
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  private priorityWeight(p: string): number {
+    return p === 'High' ? 3 : p === 'Medium' ? 2 : 1;
+  }
+
+  private greetingFor(d: Date): string {
+    const h = d.getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
   }
 }

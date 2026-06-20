@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>TID — Release Notes v2.0.0</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="Sayan Pramanick" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="alternate icon" type="image/x-icon" href="../favicon.ico" />
+  <style>
+    :root {
+      --bg: #0d0f15;
+      --surface: #14161e;
+      --surface-2: #0a0c12;
+      --border: #1c1f29;
+      --text: #e6e8ed;
+      --text-soft: #c2c6d0;
+      --muted: #8b909e;
+      --accent: #22c55e;
+    }
+    @page { margin: 18mm 14mm; }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', system-ui, sans-serif;
+      line-height: 1.6;
+    }
+    .page {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 3rem 2rem 4rem;
+    }
+    .cover {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 2rem;
+      margin-bottom: 2.5rem;
+    }
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      margin-bottom: 1.4rem;
+    }
+    .brand-mark {
+      width: 48px;
+      height: 48px;
+      flex-shrink: 0;
+      filter: drop-shadow(0 6px 14px rgba(34, 197, 94, 0.42));
+    }
+    .brand-name {
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: var(--text);
+    }
+    .eyebrow {
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1.6px;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+    h1 {
+      margin: 0.4rem 0 0.6rem;
+      font-size: 2.4rem;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #4ade80, #22c55e 60%, #16a34a);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .subtitle { color: var(--text-soft); font-size: 1.05rem; margin: 0; }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.85rem 2rem;
+      margin-top: 1.5rem;
+      font-size: 0.92rem;
+    }
+    .meta-grid .k { color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; font-size: 0.72rem; font-weight: 700; }
+    .meta-grid .v { color: var(--text); font-weight: 600; }
+    h2 {
+      font-size: 1.5rem;
+      margin: 2.4rem 0 0.85rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+    h3 {
+      font-size: 1.1rem;
+      margin: 1.4rem 0 0.55rem;
+      color: var(--accent);
+    }
+    p, li { color: var(--text-soft); }
+    ul { padding-left: 1.4rem; }
+    li { margin-bottom: 0.35rem; }
+    code {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.1rem 0.4rem;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.88em;
+      color: var(--text);
+    }
+    blockquote {
+      margin: 1rem 0;
+      padding: 0.85rem 1rem;
+      background: var(--surface);
+      border-left: 3px solid var(--accent);
+      border-radius: 8px;
+      color: var(--text-soft);
+    }
+    .footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-align: center;
+    }
+    .footer .name {
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      background: rgba(34, 197, 94, 0.14);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.4);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      margin-left: 0.5rem;
+    }
+    .print-hint {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+      color: #bae6fd;
+    }
+    .print-hint strong { color: #fff; }
+    @media print {
+      .print-hint { display: none; }
+      body { background: #fff; color: #111; }
+      h1 { background: linear-gradient(135deg, #16a34a, #15803d); -webkit-background-clip: text; background-clip: text; color: transparent; }
+      h2, p, li, .meta-grid .v, .brand-name { color: #111 !important; }
+      h3 { color: #15803d !important; }
+      code, blockquote { background: #f8fafc !important; border-color: #cbd5e1 !important; }
+      .footer .name { color: #15803d !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="print-hint">
+      <strong>Printable / PDF-friendly:</strong> Use Ctrl/Cmd + P and choose "Save as PDF".
+    </div>
+
+    <header class="cover">
+      <div class="brand-row">
+        <svg class="brand-mark" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="rn-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#34d399" />
+              <stop offset="55%" stop-color="#22c55e" />
+              <stop offset="100%" stop-color="#15803d" />
+            </linearGradient>
+          </defs>
+          <rect width="48" height="48" rx="13" fill="url(#rn-grad)" />
+          <rect x="11" y="28" width="6" height="11" rx="2" fill="#fff" opacity="0.65" />
+          <rect x="21" y="22" width="6" height="17" rx="2" fill="#fff" opacity="0.85" />
+          <rect x="31" y="14" width="6" height="25" rx="2" fill="#fff" />
+          <circle cx="34" cy="9.5" r="2.6" fill="#fff" />
+        </svg>
+        <span class="brand-name">TID</span>
+      </div>
+      <span class="eyebrow">Release Notes</span>
+      <h1>TID v2.0.0 <span class="badge">Goals · Notes · Co-pilot</span></h1>
+      <p class="subtitle">Major release. New modules, security stack, and a redesigned AI Co-pilot.</p>
+      <div class="meta-grid">
+        <div><span class="k">Version</span><br><span class="v">2.0.0</span></div>
+        <div><span class="k">Release date</span><br><span class="v">June 20, 2026</span></div>
+        <div><span class="k">Developed by</span><br><span class="v">Sayan Pramanick</span></div>
+        <div><span class="k">Copyright</span><br><span class="v">© 2026 Sayan Pramanick. All rights reserved.</span></div>
+      </div>
+    </header>
+
+    <h2>Highlights</h2>
+    <ul>
+      <li>Brand-new <strong>Goals</strong> module — progress rings, milestones, six color tones</li>
+      <li>Brand-new <strong>Notes</strong> module — sticky-note board, color tags, pin-to-top</li>
+      <li><strong>AI Co-pilot</strong> rebuilt for multi-domain awareness, daily briefing, productivity streak, quick-create commands, snooze</li>
+      <li>World-class <strong>confirm dialog</strong> replaces every native popup</li>
+      <li>PASETO v3.local sessions, AES-256-GCM encrypted storage, PBKDF2 password hashing, login throttling</li>
+      <li>Light-mode polish; world-class responsive layout; new global button system</li>
+      <li>Help section with downloadable User Guide</li>
+    </ul>
+
+    <h2>What's new</h2>
+
+    <h3>Goals</h3>
+    <ul>
+      <li>Six categories with unique color tones (Health, Learning, Finance, Career, Personal, Habit)</li>
+      <li>Animated SVG progress ring per goal</li>
+      <li>Milestones list with click-to-toggle done/undone</li>
+      <li>Quick <code>+</code> / <code>-</code> bump buttons on every card</li>
+      <li>Auto-completes when target is reached</li>
+      <li>Status chips: In progress (pulsing dot) / Completed / Paused</li>
+      <li>Due-date awareness: "12 days left" / "3 days overdue" / "Done Mar 14"</li>
+      <li>Editor with milestone manager, date pickers, status selector</li>
+    </ul>
+
+    <h3>Notes</h3>
+    <ul>
+      <li>Seven-color sticky-note palette</li>
+      <li>Pinned section rendered separately</li>
+      <li>Hover-revealed pin / delete actions</li>
+      <li>Search across title, body, and tags + color filter</li>
+      <li>KPI strip showing total notes, pinned count, unique tag count</li>
+      <li>Editor modal with title, body, tags, color swatches, pin toggle</li>
+    </ul>
+
+    <h3>AI Co-pilot</h3>
+    <ul>
+      <li>Multi-domain scan: tasks, goals, investments, notes</li>
+      <li>Suggestion types: overdue, due today, high-priority open, stalled WIP, goals at risk, goals close, investments maturing, big losers</li>
+      <li>Daily briefing — once-a-day summary across all domains</li>
+      <li>Quick-create: <code>task: ...</code>, <code>note: ...</code>, <code>goal: ... target N</code></li>
+      <li>Snooze a suggestion until tomorrow (bed icon)</li>
+      <li>Productivity streak counter with flame chip</li>
+      <li>Bump-goal action — <code>+</code> increments goal progress</li>
+      <li>Time-of-day greeting + first-name personalization</li>
+      <li>Small-talk recognition</li>
+      <li>Memory-leak safe; visibility-paused polling</li>
+    </ul>
+
+    <h3>Confirm dialog</h3>
+    <ul>
+      <li>Tone presets: danger / warning / info / success</li>
+      <li>Optional "type to confirm" mode</li>
+      <li>Eyebrow + title + body + optional bullet details</li>
+      <li>Bottom-sheet behavior on mobile</li>
+      <li>Esc dismisses, Enter confirms, backdrop click cancels</li>
+      <li>Auto-focus Cancel for danger tones</li>
+    </ul>
+
+    <h3>Admin reset experience</h3>
+    <ul>
+      <li>Top-right "Reset data…" opens a scope picker</li>
+      <li><strong>Wipe a user's data</strong> — in-modal user picker; login credentials stay intact</li>
+      <li><strong>Reset everything</strong> — type-to-confirm, ends session</li>
+      <li>User remove cascades through tasks, investments, notes, goals</li>
+    </ul>
+
+    <h3>Security stack</h3>
+    <ul>
+      <li>PASETO v3.local authenticated tokens (HMAC-SHA-384 verify-before-decrypt)</li>
+      <li>AES-256-GCM encrypted localStorage with key bound as AAD</li>
+      <li>PBKDF2-SHA-256 password hashing (200,000 iterations, per-user salt)</li>
+      <li>Login throttling with exponential backoff (3 fails = 10s → 15min cap)</li>
+      <li>HKDF-SHA-384 subkey derivation per PASETO spec</li>
+      <li>Constant-time tag comparison</li>
+      <li>Production builds: <code>sourceMap: false</code>, <code>namedChunks: false</code></li>
+      <li>Defense-in-depth meta tags: X-Content-Type-Options, Referrer-Policy, Permissions-Policy</li>
+      <li>30-minute session token TTL with auto-logout</li>
+    </ul>
+
+    <blockquote>
+      <strong>Honest note:</strong> in a frontend-only app, anyone with full device access can still read the device key from localStorage. Real-world auth requires a backend.
+    </blockquote>
+
+    <h3>UI / UX polish</h3>
+    <ul>
+      <li>Global button system: primary / ghost / cancel / danger / row-btn / icon-btn</li>
+      <li>Light-mode rework — deeper shadows, gradient surfaces, plasma-bg recoloring, frosted mobile topbar</li>
+      <li>Login page redesigned with gold-icon feature cards</li>
+      <li>Plasma background animation across the app shell (login excluded)</li>
+      <li>Sidebar order: Goals → Tasks → Notes → Calendar → Investments → Admin Console</li>
+      <li>Live badge counts for each module</li>
+    </ul>
+
+    <h3>Help section (new)</h3>
+    <ul>
+      <li>Reachable from the Account section in the sidebar</li>
+      <li>Shows app version, release name, copyright</li>
+      <li>Step-by-step User Guide (HTML, printable, "Save as PDF" friendly)</li>
+      <li>This Release Notes document</li>
+    </ul>
+
+    <h2>Breaking changes</h2>
+    <ul>
+      <li>Storage seed key bumped from <code>tid.seeded.v2</code> → <code>tid.seeded.v3</code> (notes/goals backfill is non-destructive)</li>
+      <li>Auth tokens are now PASETO v3.local — older tokens are ignored on boot, prompting fresh login</li>
+    </ul>
+
+    <h2>Removed</h2>
+    <ul>
+      <li>Native browser <code>confirm()</code> / <code>alert()</code> (replaced everywhere with the custom dialog)</li>
+      <li>Bare <code>&lt;ngx-spinner&gt;</code> markup in components (centralized via <code>LoaderService</code>)</li>
+      <li>Scan-now icon from the AI Co-pilot panel header (use the chip below instead)</li>
+    </ul>
+
+    <h2>Known limitations</h2>
+    <ul>
+      <li>Frontend-only — no server-side enforcement, no multi-device sync</li>
+      <li>Encrypted storage protects against casual inspection and tampering, not a determined operator</li>
+      <li>CSP via <code>&lt;meta&gt;</code> was removed (it broke Font Awesome webfonts in dev). Reference policy is documented in <code>index.html</code> for HTTP-header use at deploy time</li>
+    </ul>
+
+    <h2>Migration</h2>
+    <p>No user action required. On first launch after upgrade:</p>
+    <ul>
+      <li>Notes and Goals seeded with demo content (only on the demo account)</li>
+      <li>Existing tokens silently rejected; users return to the login screen</li>
+      <li>All existing tasks and investments remain intact and migrate to encrypted storage</li>
+    </ul>
+
+    <footer class="footer">
+      <p>
+        TID v2.0.0 · Developed by <span class="name">Sayan Pramanick</span><br>
+        © 2026 Sayan Pramanick. All rights reserved.
+      </p>
+    </footer>
+  </div>
+</body>
+</html>
