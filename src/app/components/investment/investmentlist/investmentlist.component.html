@@ -1,0 +1,158 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">Portfolio</span>
+      <h1>Investment overview</h1>
+      <p class="lede">Track every position, gain, and allocation in one place.</p>
+    </div>
+    <button class="primary-btn" (click)="addItem()">
+      <i class="fa-solid fa-plus"></i>
+      <span>Add Investment</span>
+    </button>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <span class="kpi-label">Total Invested</span>
+      <span class="kpi-value">₹{{ totalInvested | number:'1.0-0' }}</span>
+      <span class="kpi-sub"><i class="fa-solid fa-wallet"></i> Across {{ activeCount }} active positions</span>
+    </div>
+    <div class="kpi">
+      <span class="kpi-label">Current Value</span>
+      <span class="kpi-value">₹{{ currentPortfolioValue | number:'1.0-0' }}</span>
+      <span class="kpi-sub"><i class="fa-solid fa-chart-line"></i> Live portfolio mark</span>
+    </div>
+    <div class="kpi" [class.up]="totalGain >= 0" [class.down]="totalGain < 0">
+      <span class="kpi-label">Total P/L</span>
+      <span class="kpi-value">
+        {{ totalGain >= 0 ? '+' : '' }}₹{{ totalGain | number:'1.0-0' }}
+      </span>
+      <span class="kpi-sub">
+        <i class="fa-solid" [ngClass]="totalGain >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down'"></i>
+        {{ gainPct | number:'1.1-2' }}%
+      </span>
+    </div>
+    <div class="kpi">
+      <span class="kpi-label">Holdings</span>
+      <span class="kpi-value">{{ items.length }}</span>
+      <span class="kpi-sub"><i class="fa-solid fa-layer-group"></i> Including soft-deleted</span>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="chart-row" *ngIf="items.length > 0">
+    <div class="chart-card">
+      <highcharts-chart
+        [Highcharts]="Highcharts"
+        [options]="allocationOptions"
+        style="width: 100%; height: 360px; display: block;"
+      ></highcharts-chart>
+    </div>
+    <div class="chart-card">
+      <highcharts-chart
+        [Highcharts]="Highcharts"
+        [options]="performanceOptions"
+        style="width: 100%; height: 360px; display: block;"
+      ></highcharts-chart>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <div class="search-input">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input
+        type="text"
+        placeholder="Search by name..."
+        [(ngModel)]="searchText"
+      />
+    </div>
+    <div class="type-chips">
+      <button
+        *ngFor="let t of types"
+        class="chip"
+        [class.active]="filterType === t"
+        (click)="filterType = t"
+      >{{ t }}</button>
+    </div>
+  </div>
+
+  <!-- Cards -->
+  <div class="cards" *ngIf="filteredItems.length > 0; else emptyTpl">
+    <article
+      class="invest-card"
+      *ngFor="
+        let item of filteredItems
+          | paginate : { itemsPerPage: itemsPerPage, currentPage: currentPage }
+      "
+      [class.deleted]="item.isDeleted"
+    >
+      <header>
+        <div>
+          <h3>{{ item.name }}</h3>
+          <span class="type-badge">{{ item.type }}</span>
+        </div>
+        <span class="risk-pill" [ngClass]="riskClass(item.risk)">
+          {{ item.risk }} risk
+        </span>
+      </header>
+
+      <div class="amounts">
+        <div>
+          <span class="muted">Invested</span>
+          <strong>₹{{ item.amount | number:'1.0-0' }}</strong>
+        </div>
+        <div>
+          <span class="muted">Current</span>
+          <strong>₹{{ item.currentValue | number:'1.0-0' }}</strong>
+        </div>
+        <div [class.up]="gainOf(item) >= 0" [class.down]="gainOf(item) < 0">
+          <span class="muted">P/L</span>
+          <strong>
+            {{ gainOf(item) >= 0 ? '+' : '' }}₹{{ gainOf(item) | number:'1.0-0' }}
+            <small>({{ gainPctOf(item) | number:'1.1-2' }}%)</small>
+          </strong>
+        </div>
+      </div>
+
+      <div class="meta">
+        <span><i class="fa-regular fa-calendar"></i> {{ item.startDate | date:'mediumDate' }}</span>
+        <span class="status-pill" [ngClass]="statusClass(item.status)">{{ item.status }}</span>
+      </div>
+
+      <div class="card-actions">
+        <button class="btn-action view" (click)="view(item._id)" [disabled]="item.isDeleted">
+          <i class="fa-solid fa-eye"></i> View
+        </button>
+        <button class="btn-action edit" (click)="edit(item._id)" [disabled]="item.isDeleted">
+          <i class="fa-solid fa-pen"></i> Edit
+        </button>
+        <button class="btn-action delete" (click)="delete(item._id)" [disabled]="item.isDeleted">
+          <i class="fa-solid fa-trash"></i> Delete
+        </button>
+      </div>
+
+      <div class="deleted-banner" *ngIf="item.isDeleted">Soft-deleted</div>
+    </article>
+  </div>
+
+  <ng-template #emptyTpl>
+    <div class="empty-state">
+      <div class="empty-icon">
+        <i class="fa-solid fa-chart-pie"></i>
+      </div>
+      <h3>No investments yet</h3>
+      <p>Add your first investment to start tracking performance and allocation.</p>
+      <button class="primary-btn" (click)="addItem()">
+        <i class="fa-solid fa-plus"></i>
+        <span>Add Investment</span>
+      </button>
+    </div>
+  </ng-template>
+
+  <pagination-controls
+    *ngIf="filteredItems.length > itemsPerPage"
+    (pageChange)="currentPage = $event"
+  ></pagination-controls>
+</div>

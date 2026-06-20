@@ -1,46 +1,1053 @@
-hr.rounded {
-  border-top: 8px solid #bbb;
-  border-radius: 5px;
-}
-/* Active link styling */
-.nav-link.active {
-  font-weight: 600; /* Bold font weight */
-  color: #1d2b24; /* Text color for active link */
-  background-color: #5da799; /* Background color for active link */
-  border-radius: 1rem; /* Increased border radius for a more rounded look */
+:host {
+  display: block;
+  --sb-w: 280px;
+  --sb-w-collapsed: 86px;
 }
 
-/* Base link styling */
+/* Side surface contrasts the page bg slightly. */
+[data-theme='dark'] .sidebar { background: #0a0c12; }
+[data-theme='light'] .sidebar {
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.04), 4px 0 24px rgba(15, 23, 42, 0.05);
+  border-right: 1px solid var(--border);
+}
+
+/* Top accent strip */
+.app-shell::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  z-index: 1100;
+  pointer-events: none;
+  opacity: 0.65;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: var(--sb-w) 1fr;
+  min-height: 100vh;
+  background: var(--bg);
+  transition: grid-template-columns 0.25s ease;
+  position: relative;
+  isolation: isolate;
+}
+
+.app-shell.collapsed { grid-template-columns: var(--sb-w-collapsed) 1fr; }
+
+/* ========== Ambient blue plasma background ========== */
+.plasma-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+
+  /* Slowly rotating conic shimmer underneath everything else */
+  .plasma-shimmer {
+    position: absolute;
+    inset: -25%;
+    background:
+      conic-gradient(
+        from 0deg at 50% 50%,
+        transparent 0deg,
+        rgba(56, 189, 248, 0.08) 60deg,
+        transparent 120deg,
+        rgba(167, 139, 250, 0.07) 200deg,
+        transparent 260deg,
+        rgba(34, 211, 238, 0.06) 320deg,
+        transparent 360deg
+      );
+    filter: blur(40px);
+    animation: shimmer-rotate 60s linear infinite;
+    transform-origin: center;
+  }
+
+  .plasma-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    will-change: transform;
+  }
+
+  .plasma-1 {
+    width: 520px;
+    height: 520px;
+    top: -180px;
+    right: -120px;
+    background: radial-gradient(circle, #38bdf8 0%, transparent 70%);
+    opacity: 0.18;
+    animation: plasma-float-1 18s ease-in-out infinite;
+  }
+
+  .plasma-2 {
+    width: 440px;
+    height: 440px;
+    bottom: -160px;
+    left: 18%;
+    background: radial-gradient(circle, #60a5fa 0%, transparent 70%);
+    opacity: 0.14;
+    animation: plasma-float-2 22s ease-in-out infinite;
+  }
+
+  .plasma-3 {
+    width: 320px;
+    height: 320px;
+    top: 40%;
+    right: 30%;
+    background: radial-gradient(circle, #818cf8 0%, transparent 70%);
+    opacity: 0.10;
+    animation: plasma-float-3 26s ease-in-out infinite;
+  }
+
+  /* Faint mesh grid that fades at the edges — subtle scaffolding feel */
+  .plasma-grid {
+    position: absolute;
+    inset: -1px;
+    background-image:
+      linear-gradient(to right, var(--border) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse at center, #000 30%, transparent 80%);
+    opacity: 0.18;
+  }
+
+  /* Twinkling star particles — bright dots that pulse and fade in/out */
+  .star {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: #ffffff;
+    opacity: 0;
+    box-shadow: 0 0 6px #c4b5fd, 0 0 12px #818cf8;
+    animation: star-twinkle 6s ease-in-out infinite;
+  }
+  .s1  { top: 10%;  left: 15%; animation-delay: 0s;   }
+  .s2  { top: 22%;  left: 70%; animation-delay: 1.5s; width: 2px; height: 2px; }
+  .s3  { top: 35%;  left: 88%; animation-delay: 3s;   }
+  .s4  { top: 48%;  left: 8%;  animation-delay: 0.8s; width: 4px; height: 4px; }
+  .s5  { top: 60%;  left: 45%; animation-delay: 2.2s; }
+  .s6  { top: 72%;  left: 78%; animation-delay: 4s;   width: 2px; height: 2px; }
+  .s7  { top: 82%;  left: 25%; animation-delay: 1s;   }
+  .s8  { top: 18%;  left: 40%; animation-delay: 3.5s; width: 2px; height: 2px; }
+  .s9  { top: 55%;  left: 92%; animation-delay: 4.8s; }
+  .s10 { top: 88%;  left: 60%; animation-delay: 2.6s; width: 2px; height: 2px; }
+  /* Flowing light ribbons */
+  .plasma-ribbons {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    opacity: 0.95;
+    mix-blend-mode: screen;
+  }
+
+  .ribbon {
+    /* The dasharray + dashoffset animation creates a moving "comet" wisp
+       along each S-curve — short bright segment, long invisible gap. */
+    stroke-linecap: round;
+    will-change: stroke-dashoffset, transform;
+  }
+
+  .ribbon-1 {
+    stroke-dasharray: 380 1400;
+    stroke-dashoffset: 1780;
+    animation: ribbon-travel 16s linear infinite, ribbon-drift-1 18s ease-in-out infinite;
+  }
+  .ribbon-2 {
+    stroke-dasharray: 320 1500;
+    stroke-dashoffset: 1820;
+    animation: ribbon-travel 20s linear -5s infinite, ribbon-drift-2 22s ease-in-out infinite;
+  }
+  .ribbon-3 {
+    stroke-dasharray: 260 1600;
+    stroke-dashoffset: 1860;
+    animation: ribbon-travel 24s linear -10s infinite, ribbon-drift-3 26s ease-in-out infinite;
+  }
+  /* Reverse-direction wisps */
+  .ribbon-4 {
+    stroke-dasharray: 320 1500;
+    stroke-dashoffset: -1820;
+    animation: ribbon-travel-reverse 22s linear -3s infinite, ribbon-drift-1 20s ease-in-out infinite;
+  }
+  .ribbon-5 {
+    stroke-dasharray: 240 1700;
+    stroke-dashoffset: -1940;
+    animation: ribbon-travel-reverse 26s linear -12s infinite, ribbon-drift-3 24s ease-in-out infinite;
+  }
+}
+
+[data-theme='light'] .plasma-bg {
+  .plasma-1 { opacity: 0.16; }
+  .plasma-2 { opacity: 0.13; }
+  .plasma-3 { opacity: 0.10; }
+  .plasma-grid { opacity: 0.35; }
+  .plasma-ribbons { opacity: 0.55; }
+}
+
+@keyframes plasma-float-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(-40px, 30px) scale(1.06); }
+  66%      { transform: translate(20px, 60px) scale(0.94); }
+}
+@keyframes plasma-float-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(60px, -50px) scale(1.08); }
+}
+@keyframes plasma-float-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40%      { transform: translate(-30px, 40px) scale(1.1); }
+  80%      { transform: translate(40px, -20px) scale(0.95); }
+}
+
+/* Ribbon comet flowing along the curve */
+@keyframes ribbon-travel {
+  to { stroke-dashoffset: -1820; }
+}
+
+/* Reverse direction for the right-to-left ribbons */
+@keyframes ribbon-travel-reverse {
+  to { stroke-dashoffset: 0; }
+}
+
+/* Slow conic shimmer rotating behind everything */
+@keyframes shimmer-rotate {
+  to { transform: rotate(360deg); }
+}
+
+/* Twinkling stars: fade in/out + tiny scale pulse */
+@keyframes star-twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.6); }
+  20%      { opacity: 0.9; transform: scale(1); }
+  40%      { opacity: 0.4; transform: scale(0.85); }
+  60%      { opacity: 1; transform: scale(1.1); }
+  80%      { opacity: 0.5; transform: scale(0.9); }
+}
+
+/* Each ribbon drifts vertically a bit so the sweeps don't feel mechanical */
+@keyframes ribbon-drift-1 {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-30px); }
+}
+@keyframes ribbon-drift-2 {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(40px); }
+}
+@keyframes ribbon-drift-3 {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-20px); }
+}
+
+/* Make sure the actual sidebar and main content layer above the plasma */
+.sidebar,
+.main-column,
+.collapse-btn,
+.backdrop {
+  position: relative;
+  z-index: 1;
+}
+.sidebar { z-index: 1020; }
+.collapse-btn { z-index: 1030; }
+.backdrop { z-index: 1015; }
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  border-right: 1px solid var(--border);
+  padding: 1.1rem 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  box-shadow: var(--shadow-2);
+  z-index: 1020;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: width 0.25s ease, background 0.2s ease;
+}
+
+/* ---------- Brand row ---------- */
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.2rem 0.4rem 0.5rem;
+
+  .brand-mark { flex-shrink: 0; }
+
+  .brand-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+    min-width: 0;
+    flex: 1;
+
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+    .brand-sub { font-size: 0.74rem; color: var(--muted); margin-top: 0.15rem; }
+  }
+}
+
+/* Floating collapse handle pinned exactly on the seam between
+   sidebar and main column. Lives outside the sidebar so it isn't
+   clipped by the scroll container, and uses position:fixed so the
+   handle hovers the seam regardless of page scroll. */
+.collapse-btn {
+  position: fixed;
+  top: 28px;
+  left: calc(var(--sb-w) - 14px);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-1);
+  transition: left 0.25s ease, background 0.2s ease, color 0.2s ease,
+    border-color 0.2s ease, transform 0.2s ease;
+  z-index: 1030;
+
+  &:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-color: var(--accent-border);
+    transform: scale(1.08);
+  }
+}
+
+.app-shell.collapsed .collapse-btn {
+  left: calc(var(--sb-w-collapsed) - 14px);
+}
+
+.app-shell.collapsed .sidebar-brand {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* ---------- User card ---------- */
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0.7rem 0.85rem;
+
+  .avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--accent-3), var(--info));
+    color: var(--accent-on);
+    font-weight: 800;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+  }
+
+  .user-info { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
+  .user-name {
+    font-weight: 700;
+    color: var(--text);
+    text-transform: capitalize;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .user-role {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.74rem;
+    color: var(--muted);
+    text-transform: capitalize;
+    font-weight: 600;
+    margin-top: 0.2rem;
+
+    &.admin { color: var(--warning); }
+    i { font-size: 0.72rem; }
+  }
+}
+
+.avatar-rail {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--accent-3), var(--info));
+  color: var(--accent-on);
+  font-weight: 800;
+  font-size: 0.9rem;
+  box-shadow: var(--shadow-1);
+}
+
+/* ---------- Stats ---------- */
+.quick-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.65rem 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  .stat-value {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 0.66rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    font-weight: 700;
+  }
+}
+
+/* ---------- Section title ---------- */
+.section-title {
+  color: var(--faint);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+  padding: 0.5rem 0.75rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  span { display: inline-block; }
+}
+
+/* ---------- Nav list ---------- */
+.nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+
+  &.secondary { margin-top: 0.1rem; }
+}
+
 .nav-link {
-  display: block; /* Ensure links are block-level for full-width clicks */
-  padding: 1rem 1.5rem; /* Increased padding for a larger clickable area */
-  border-radius: 1rem; /* Rounded corners */
-  transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transitions */
-  color: #1d2b24; /* Default text color */
-  text-decoration: none; /* Remove underline */
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.7rem 0.85rem 0.7rem 1rem;
+  border-radius: 12px;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.93rem;
+  text-decoration: none;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  transition: background 0.2s ease, color 0.2s ease;
+
+  /* Left accent rail (hidden by default) */
+  .active-rail {
+    position: absolute;
+    left: 0;
+    top: 8px;
+    bottom: 8px;
+    width: 4px;
+    border-radius: 0 4px 4px 0;
+    background: transparent;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+
+  i {
+    width: 22px;
+    text-align: center;
+    font-size: 1rem;
+    color: var(--text-soft);
+    flex-shrink: 0;
+    transition: color 0.2s ease;
+  }
+
+  .nav-label {
+    flex: 1;
+    min-width: 0;
+    color: var(--text);
+  }
+
+  /* Trailing badge (count) */
+  .nav-badge {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 999px;
+    padding: 0.05rem 0.55rem;
+    font-size: 0.74rem;
+    font-weight: 700;
+    min-width: 24px;
+    text-align: center;
+  }
+
+  /* Trailing inline action (e.g. quick add) */
+  .nav-action {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-soft);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+    &:hover {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: var(--accent-border);
+    }
+  }
+
+  .nav-dot {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
+  &:hover {
+    background: var(--surface-3);
+
+    i { color: var(--text); }
+  }
+
+  /* Active state — green gradient pill, white text/icon for AAA contrast */
+  &.active {
+    background: linear-gradient(90deg, var(--accent-2), var(--accent-3));
+    color: var(--accent-on);
+    box-shadow: 0 14px 26px var(--accent-glow);
+
+    i,
+    .nav-label { color: var(--accent-on); }
+
+    .active-rail { background: transparent; }
+
+    .nav-badge {
+      background: rgba(0, 0, 0, 0.22);
+      color: var(--accent-on);
+      border-color: transparent;
+    }
+
+    .nav-action {
+      background: rgba(255, 255, 255, 0.18);
+      color: var(--accent-on);
+      border-color: transparent;
+
+      &:hover { background: rgba(255, 255, 255, 0.28); }
+    }
+  }
+
+  &.logout:hover {
+    background: var(--danger-soft);
+    color: var(--danger-text);
+    i { color: var(--danger-text); }
+  }
 }
 
-/* Hover effect */
-/* Hover effect with specific color */
-.nav-link:hover {
-  box-shadow: 0 0.5rem 1rem rgba(9, 46, 7, 0.2); /* Enhanced shadow effect on hover */
-  background-color: #1f9579 !important; /* Light blue background on hover */
-  color: #1d2b24; /* Ensure text color remains readable */
+/* Collapsed: center the icon, hide labels and trailing widgets */
+.app-shell.collapsed .nav-link {
+  justify-content: center;
+  padding: 0.7rem 0.5rem;
+  gap: 0;
+  i { width: auto; }
+
+  .active-rail {
+    left: 0;
+    top: 10px;
+    bottom: 10px;
+  }
+
+  &.active {
+    background: var(--accent-soft);
+    box-shadow: none;
+
+    i { color: var(--accent); }
+    .active-rail { background: var(--accent); }
+  }
 }
 
-/* Spacing between items */
-.nav-item {
-  margin-bottom: 1rem; /* Spacing between items */
+.nav-spacer { flex: 1 1 auto; }
+
+/* ---------- Theme toggle ---------- */
+.theme-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px;
+  gap: 4px;
+  margin: 0.5rem 0.4rem 0.25rem;
+
+  .theme-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    padding: 0.45rem 0.5rem;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover { color: var(--text); }
+
+    &.active {
+      background: linear-gradient(135deg, var(--accent-3), var(--accent-2));
+      color: var(--accent-on);
+      box-shadow: 0 4px 12px var(--accent-glow);
+    }
+  }
 }
 
-/* Mobile responsiveness adjustments */
-@media (max-width: 767.98px) {
+.theme-rail-btn {
+  width: 44px;
+  height: 44px;
+  align-self: center;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  margin-bottom: 0.25rem;
+
+  &:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-color: var(--accent-border);
+  }
+}
+
+/* ---------- Main column ---------- */
+.main-column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-topbar {
+  display: none;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 1010;
+
+  .icon-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover { background: var(--surface-3); }
+  }
+
+  .mobile-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    color: var(--text);
+    flex: 1;
+
+    .brand-mark.small { flex-shrink: 0; }
+  }
+
+  .avatar.small {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent-3), var(--info));
+    color: var(--accent-on);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.78rem;
+  }
+}
+
+.app-main { padding: 1.5rem 0 3rem; flex: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .plasma-bg .plasma-orb,
+  .plasma-bg .plasma-shimmer,
+  .plasma-bg .star,
+  .plasma-bg .ribbon { animation: none; }
+}
+
+/* ---------- Mobile ---------- */
+.backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  z-index: 1015;
+}
+
+@media (max-width: 991.98px) {
+  .app-shell { grid-template-columns: 1fr; }
+  .app-shell.collapsed { grid-template-columns: 1fr; }
+  .mobile-topbar { display: flex; }
+
+  /* Mobile collapse handle is hidden — drawer is the only mode here */
+  .collapse-btn { display: none; }
+
+  /* Lighter plasma on small screens — keeps content readable */
+  .plasma-bg .plasma-orb { filter: blur(60px); }
+  .plasma-bg .plasma-1 { width: 380px; height: 380px; }
+  .plasma-bg .plasma-2 { width: 320px; height: 320px; }
+  .plasma-bg .plasma-3 { width: 240px; height: 240px; }
+  .plasma-bg .plasma-ribbons { opacity: 0.55; }
+  .plasma-bg .plasma-shimmer { opacity: 0.5; }
+  .plasma-bg .star { display: none; }
+  .plasma-bg .s1, .plasma-bg .s4, .plasma-bg .s7, .plasma-bg .s9 { display: block; }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: var(--sb-w);
+    transform: translateX(-110%);
+    transition: transform 0.25s ease;
+    overflow-x: hidden;
+  }
+
+  .app-shell.mobile-open .sidebar { transform: translateX(0); }
+  .app-shell.mobile-open .backdrop { display: block; }
+  .app-shell.collapsed .sidebar { width: var(--sb-w); }
+}
+
+
+/* ============================================================
+   Light theme polish — lifts surfaces, intensifies the plasma,
+   and gives navigation items proper contrast.
+   ============================================================ */
+[data-theme='light'] {
+  /* Subtle painted background under the plasma so the whole page
+     isn't a flat white. Two soft conic radials keep it visually
+     interesting without competing with content. */
+  .app-shell {
+    background:
+      radial-gradient(ellipse 60% 50% at 12% 8%, rgba(34, 197, 94, 0.06), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 88% 92%, rgba(59, 130, 246, 0.06), transparent 60%),
+      var(--bg);
+  }
+
+  /* Plasma orbs are barely visible on white at default 0.16/0.13 —
+     bump them up and re-tint to greens/blues that read better on cream. */
+  .plasma-bg {
+    .plasma-shimmer { opacity: 0.7; }
+    .plasma-1 {
+      opacity: 0.32;
+      background: radial-gradient(circle, #34d399 0%, transparent 70%);
+    }
+    .plasma-2 {
+      opacity: 0.28;
+      background: radial-gradient(circle, #60a5fa 0%, transparent 70%);
+    }
+    .plasma-3 {
+      opacity: 0.22;
+      background: radial-gradient(circle, #a78bfa 0%, transparent 70%);
+    }
+    .plasma-grid { opacity: 0.35; }
+  }
+
+  /* Top accent strip bumps from 0.65 → 0.85 so it reads on white */
+  .app-shell::before { opacity: 0.85; }
+
+  /* Section title inside sidebar — was too light, almost invisible */
+  .section-title { color: var(--muted); }
+
+  /* User card and quick-stats — solid contrast, soft shadow */
+  .user-card {
+    background: linear-gradient(180deg, #ffffff, #f8fafc);
+    border-color: var(--border);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+
+    .user-name { color: var(--text); }
+    .user-role { color: var(--muted); }
+  }
+
+  .quick-stats .stat {
+    background: linear-gradient(180deg, #ffffff, #f6f8fc);
+    border-color: var(--border);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+  }
+
+  /* Nav links — hover should give a clear lift on light bg */
   .nav-link {
-    padding: 0.8rem 1.2rem; /* Adjust padding on smaller screens */
-    border-radius: 0.75rem; /* Slightly less rounded for smaller screens */
+    color: var(--text-soft);
+
+    .nav-label { color: var(--text); font-weight: 600; }
+
+    i { color: var(--muted); }
+
+    &:hover:not(.active) {
+      background: var(--accent-soft);
+      color: var(--accent);
+      i { color: var(--accent); }
+    }
   }
 
-  .nav-item {
-    margin-bottom: 0.8rem; /* Adjust spacing between items on smaller screens */
+  /* Active pill — keep the green gradient, ensure the rail is hidden */
+  .nav-link.active {
+    background: linear-gradient(90deg, var(--accent-2), var(--accent-3));
+    color: #ffffff;
+    box-shadow: 0 6px 16px var(--accent-glow);
+
+    i, .nav-label { color: #ffffff; }
+    .active-rail { background: transparent; }
+    .nav-badge { background: rgba(255, 255, 255, 0.25); color: #ffffff; }
   }
+
+  /* Collapse handle on the seam */
+  .collapse-btn {
+    background: #ffffff;
+    border-color: var(--border);
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.10);
+    color: var(--text);
+
+    &:hover { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-border); }
+  }
+
+  /* Theme toggle pills */
+  .theme-toggle {
+    background: var(--surface-2);
+    border-color: var(--border);
+
+    .theme-btn { color: var(--muted); }
+    .theme-btn.active {
+      background: linear-gradient(135deg, var(--accent-3), var(--accent-2));
+      color: #ffffff;
+    }
+  }
+
+  /* Mobile topbar — thin frosted bar, not flat white */
+  .mobile-topbar {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px) saturate(140%);
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+  }
+
+  /* Backdrop dim is too dark in light theme — lighten it */
+  .backdrop { background: rgba(15, 23, 42, 0.35); }
+}
+
+/* ============================================================
+   Generic light-mode card lift — applies anywhere a component
+   uses .form-card or our standard surfaces. Component view
+   encapsulation will scope these out, so the global counterpart
+   lives in src/styles.scss.
+   ============================================================ */
+
+
+/* ============================================================
+   App credit footer — appears below the routed view inside the
+   main column. Designed as a horizontal capsule with brand mark,
+   version pill, and copyright line.
+   ============================================================ */
+.app-footer {
+  position: relative;
+  z-index: 2;
+  margin: 1.5rem clamp(0.85rem, 2.5vw, 1.5rem) 1.25rem;
+  padding: 1.1rem 1.4rem 1rem;
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--accent) 6%, var(--surface)) 0%,
+      var(--surface) 60%);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+  isolation: isolate;
+  text-align: center;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 50% 70% at 0% 50%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%),
+      radial-gradient(ellipse 50% 70% at 100% 50%, color-mix(in srgb, var(--info) 10%, transparent), transparent 70%);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--info), transparent);
+    opacity: 0.6;
+  }
+}
+
+.af-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.7rem;
+}
+
+.af-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.af-logo {
+  flex-shrink: 0;
+}
+
+.af-brand-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+  text-align: left;
+  min-width: 0;
+
+  .af-name {
+    color: var(--text);
+    font-weight: 800;
+    font-size: 1rem;
+    letter-spacing: -0.005em;
+    white-space: nowrap;
+  }
+}
+
+.af-version-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  background: linear-gradient(135deg, var(--accent-3), var(--accent-2));
+  color: var(--accent-on);
+  box-shadow: 0 4px 10px var(--accent-glow);
+  white-space: nowrap;
+}
+
+.af-copy {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.2px;
+  padding-top: 0.7rem;
+  border-top: 1px dashed var(--border);
+}
+
+/* Tablet — keep horizontal but tighten spacing */
+@media (max-width: 767.98px) {
+  .app-footer {
+    margin: 1.25rem 1rem 1rem;
+    padding: 1rem 1.1rem 0.9rem;
+    border-radius: 16px;
+  }
+  .af-brand { gap: 0.7rem; }
+  .af-brand-text .af-name { font-size: 0.92rem; }
+  .af-version-pill { font-size: 0.7rem; padding: 0.2rem 0.55rem; }
+}
+
+/* Phone — stack brand row vertically and shrink everything */
+@media (max-width: 575.98px) {
+  .app-footer {
+    margin: 1rem 0.85rem 1rem;
+    padding: 0.95rem 0.95rem 0.85rem;
+    border-radius: 14px;
+  }
+  .af-brand {
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+  .af-brand-text {
+    align-items: center;
+    text-align: center;
+  }
+  .af-copy {
+    font-size: 0.72rem;
+  }
+}
+
+/* Light theme — keep accent wash but on white surface */
+[data-theme='light'] .app-footer {
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--accent) 5%, #ffffff) 0%,
+      #ffffff 60%);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-footer { transition: none !important; }
 }

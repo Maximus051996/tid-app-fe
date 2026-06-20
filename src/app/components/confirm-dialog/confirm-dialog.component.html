@@ -1,0 +1,96 @@
+<ng-container *ngIf="current as item">
+  <div
+    class="cd-backdrop"
+    [class.is-closing]="item.closing"
+    (click)="onBackdrop($event)"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-labelledby]="'cd-title'"
+    [attr.aria-describedby]="'cd-desc'"
+  >
+    <div
+      class="cd-panel"
+      [class.is-closing]="item.closing"
+      [attr.data-tone]="toneOf(item.req)"
+    >
+      <!-- Decorative glow ring -->
+      <div class="cd-glow" aria-hidden="true"></div>
+
+      <!-- Top bar with icon + close -->
+      <header class="cd-head">
+        <span class="cd-icon" [attr.data-tone]="toneOf(item.req)">
+          <i [class]="iconFor(item.req)"></i>
+          <span class="cd-icon-pulse" aria-hidden="true"></span>
+        </span>
+
+        <div class="cd-titles">
+          <span class="cd-eyebrow" *ngIf="item.req.eyebrow">{{ item.req.eyebrow }}</span>
+          <h2 id="cd-title" class="cd-title">{{ item.req.title }}</h2>
+        </div>
+
+        <button
+          type="button"
+          class="cd-close"
+          (click)="onCancel()"
+          aria-label="Close dialog"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </header>
+
+      <!-- Body -->
+      <div class="cd-body">
+        <p id="cd-desc" class="cd-msg">{{ item.req.message }}</p>
+
+        <ul class="cd-details" *ngIf="item.req.details?.length">
+          <li *ngFor="let d of item.req.details">
+            <i class="fa-solid fa-circle"></i>
+            <span>{{ d }}</span>
+          </li>
+        </ul>
+
+        <div class="cd-type" *ngIf="item.req.confirmInput">
+          <label for="cd-type-input">
+            Type <strong>{{ item.req.confirmInput }}</strong> to confirm
+          </label>
+          <input
+            #typeInput
+            id="cd-type-input"
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            [(ngModel)]="item.typed"
+            [attr.aria-invalid]="!canConfirm()"
+            placeholder="Type here…"
+          />
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <footer class="cd-foot">
+        <button
+          #cancelBtn
+          type="button"
+          class="cd-btn cd-btn-ghost"
+          (click)="onCancel()"
+        >
+          {{ item.req.cancelLabel ?? 'Cancel' }}
+        </button>
+        <button
+          #confirmBtn
+          type="button"
+          class="cd-btn cd-btn-primary"
+          [attr.data-tone]="toneOf(item.req)"
+          [disabled]="!canConfirm()"
+          (click)="onConfirm()"
+        >
+          <span class="cd-btn-shine" aria-hidden="true"></span>
+          <span class="cd-btn-content">
+            <i [class]="iconFor(item.req)"></i>
+            <span>{{ item.req.confirmLabel ?? 'Confirm' }}</span>
+          </span>
+        </button>
+      </footer>
+    </div>
+  </div>
+</ng-container>

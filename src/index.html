@@ -2,12 +2,125 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>TID</title>
+    <title>TID — Task &amp; Investment Decision</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <meta name="theme-color" content="#22c55e" />
+    <!--
+      Defense-in-depth security headers. CSP is intentionally NOT set via
+      <meta> here — it belongs as an HTTP response header at deploy time
+      where it can be tuned per environment without breaking the dev
+      server (which uses eval/HMR) or the bundled webfonts. A reference
+      production policy:
+        Content-Security-Policy:
+          default-src 'self';
+          script-src 'self';
+          style-src 'self' 'unsafe-inline';
+          font-src 'self' data:;
+          img-src 'self' data: blob:;
+          connect-src 'self';
+          worker-src 'self' blob:;
+          frame-ancestors 'none';
+          base-uri 'self';
+          form-action 'self';
+          object-src 'none';
+    -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="alternate icon" type="image/x-icon" href="favicon.ico" />
+    <style>
+      /* Boot splash — replaced as soon as Angular renders. */
+      #boot-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(ellipse at center, #14161e 0%, #0d0f15 100%);
+        transition: opacity 0.35s ease, visibility 0s linear 0.35s;
+      }
+      #boot-splash.fade-out {
+        opacity: 0;
+        visibility: hidden;
+      }
+      .bs-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.85rem;
+      }
+      .bs-mark {
+        width: 64px;
+        height: 64px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, #34d399, #15803d);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 12px 28px rgba(34, 197, 94, 0.42);
+        position: relative;
+      }
+      .bs-mark svg { width: 60%; height: 60%; }
+      .bs-mark::before {
+        content: '';
+        position: absolute;
+        inset: -6px;
+        border-radius: 22px;
+        border: 2px solid rgba(34, 197, 94, 0.55);
+        animation: bs-ring 1.6s ease-out infinite;
+      }
+      @keyframes bs-ring {
+        0% { transform: scale(0.95); opacity: 0.7; }
+        100% { transform: scale(1.18); opacity: 0; }
+      }
+      .bs-text {
+        color: #e6e8ed;
+        font-family: 'Inter', system-ui, sans-serif;
+        font-weight: 700;
+        font-size: 0.9rem;
+        letter-spacing: 0.02em;
+      }
+      .bs-strip {
+        width: 200px;
+        height: 3px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.06);
+        position: relative;
+      }
+      .bs-strip::before {
+        content: '';
+        position: absolute;
+        height: 100%;
+        width: 40%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, transparent, #22c55e 20%, #4ade80 50%, #22c55e 80%, transparent);
+        animation: bs-strip 1.6s ease-in-out infinite;
+      }
+      @keyframes bs-strip {
+        0%   { transform: translateX(-110%); }
+        100% { transform: translateX(260%); }
+      }
+    </style>
   </head>
   <body>
+    <div id="boot-splash" aria-hidden="true">
+      <div class="bs-card">
+        <div class="bs-mark">
+          <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <rect x="11" y="28" width="6" height="11" rx="2" fill="white" opacity="0.65"/>
+            <rect x="21" y="22" width="6" height="17" rx="2" fill="white" opacity="0.85"/>
+            <rect x="31" y="14" width="6" height="25" rx="2" fill="white"/>
+            <circle cx="34" cy="9.5" r="2.6" fill="white"/>
+          </svg>
+        </div>
+        <span class="bs-text">Loading TID…</span>
+        <span class="bs-strip"></span>
+      </div>
+    </div>
     <app-root></app-root>
   </body>
 </html>

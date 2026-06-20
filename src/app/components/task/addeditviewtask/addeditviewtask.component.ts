@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import {
   FormArray,
   FormBuilder,
@@ -11,22 +11,41 @@ import { TaskService } from '../../../services/task/task.service';
 import { NgxSpinnerModule } from 'ngx-spinner';
 import { AuthService } from '../../../services/auth/auth.service';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { DataService } from '../../../services/data/data.service';
+import { DateTimePickerComponent } from '../../datetime-picker/datetime-picker.component';
+import { AppSelectComponent, SelectOption } from '../../app-select/app-select.component';
 
 @Component({
   selector: 'app-addeditviewtask',
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule, NgxSpinnerModule],
+  imports: [
+    ReactiveFormsModule,
+    CommonModule,
+    NgxSpinnerModule,
+    DateTimePickerComponent,
+    AppSelectComponent,
+  ],
   templateUrl: './addeditviewtask.component.html',
   styleUrl: './addeditviewtask.component.scss',
 })
-export class AddeditviewtaskComponent implements OnInit {
+export class AddeditviewtaskComponent implements OnInit, OnDestroy {
   taskForm!: FormGroup;
   operationHeader: string = '';
   priorities: string[] = ['Low', 'Medium', 'High'];
   taskId: string | null = null;
   isStartDatePickerMode: boolean = false;
   isViewMode: boolean = false;
+
+  readonly priorityOptions: SelectOption[] = [
+    { value: 'Low', label: 'Low', icon: 'fa-regular fa-circle', tone: 'info', description: 'Backlog' },
+    { value: 'Medium', label: 'Medium', icon: 'fa-solid fa-bolt', tone: 'warning', description: 'In flight' },
+    { value: 'High', label: 'High', icon: 'fa-solid fa-fire', tone: 'danger', description: 'Open & urgent' },
+  ];
+
+  private readonly destroy$ = new Subject<void>();
+
   constructor(
     private fb: FormBuilder,
     private taskService: TaskService,
@@ -37,17 +56,37 @@ export class AddeditviewtaskComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.route.url.subscribe((urlSegments) => {
-      this.operationHeader = this.formatString(urlSegments[0].path);
-    });
-    this.checkOpearationMode(this.operationHeader);
     this.initializeForm();
-    this.route.paramMap.subscribe((params) => {
-      this.taskId = params.get('id');
-      if (this.taskId) {
-        this.getTaskDetails(this.taskId);
-      }
-    });
+    this.route.url
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((urlSegments) => {
+        this.operationHeader = this.formatString(urlSegments[0].path);
+        this.checkOpearationMode(this.operationHeader);
+      });
+    this.route.paramMap
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((params) => {
+        this.taskId = params.get('id');
+        if (this.taskId) {
+          this.getTaskDetails(this.taskId);
+        }
+      });
+    // Pre-fill due date when navigating from calendar via ?due=YYYY-MM-DD
+    this.route.queryParamMap
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((q) => {
+        const due = q.get('due');
+        if (due && !this.taskId) {
+          const start = `${due}T09:00`;
+          const end = `${due}T17:00`;
+          this.taskForm.patchValue({ startDate: start, endDate: end });
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   checkOpearationMode(operationHeader: string) {
@@ -102,6 +141,7 @@ export class AddeditviewtaskComponent implements OnInit {
     const formattedSubtasks = subtasks.map((subtask: any) => subtask.subtask);
 
     let jsonData: any = {
+      subject,
       description,
       priority,
       startDate,
@@ -130,7 +170,7 @@ export class AddeditviewtaskComponent implements OnInit {
       ? this.taskService.editTask(this.taskId, jsonData)
       : this.taskService.addtask(jsonData);
 
-    taskObservable.subscribe({
+    taskObservable.pipe(takeUntil(this.destroy$)).subscribe({
       next: (res) => {
         this.dataService.showSuccessToasterMsg(res.message);
         this.router.navigate(['/taskinfo']);
@@ -148,47 +188,42 @@ export class AddeditviewtaskComponent implements OnInit {
 
   getTaskDetails(id: string) {
     this.authService.showSpinner();
-    this.taskService.gettaskbyId(id).subscribe(
-      (task) => {
-        if (task) {
-          const formattedSubtasks = task.subtasks
-            ? task.subtasks.map((subtask: string) => ({
-                subtask,
-              }))
-            : [];
+    this.taskService
+      .gettaskbyId(id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (task) => {
+          if (task) {
+            const formattedSubtasks = task.subtasks
+              ? task.subtasks.map((subtask: string) => ({ subtask }))
+              : [];
 
-          this.isVisiblesub_taskflag =
-            formattedSubtasks.length > 0 ? true : false;
+            this.isVisiblesub_taskflag = formattedSubtasks.length > 0;
 
-          this.taskForm.patchValue({
-            subject: task.subject,
-            description: task.description,
-            priority: task.priority,
-            startDate: this.formatDateToInput(new Date(task.startDate)),
-            endDate: this.formatDateToInput(new Date(task.endDate)),
-            isRemainder: task.isRemainder,
-            isDeleted: task.isDeleted,
-            taskStatus: task.taskStatus,
-          });
-          const subtasksArray = this.taskForm.get('subtasks') as FormArray;
-          subtasksArray.clear(); // Clear any existing subtasks
+            this.taskForm.patchValue({
+              subject: task.subject,
+              description: task.description,
+              priority: task.priority,
+              startDate: this.formatDateToInput(new Date(task.startDate)),
+              endDate: this.formatDateToInput(new Date(task.endDate)),
+              isRemainder: task.isRemainder,
+              isDeleted: task.isDeleted,
+              taskStatus: task.taskStatus,
+            });
+            const subtasksArray = this.taskForm.get('subtasks') as FormArray;
+            subtasksArray.clear();
+            formattedSubtasks.forEach((subtask: any) => {
+              subtasksArray.push(this.fb.group({ subtask: [subtask.subtask] }));
+            });
 
-          formattedSubtasks.forEach((subtask: any) => {
-            subtasksArray.push(
-              this.fb.group({
-                subtask: [subtask.subtask],
-              })
-            );
-          });
-
+            this.authService.hideSpinner();
+          }
+        },
+        error: (error) => {
           this.authService.hideSpinner();
-        }
-      },
-      (error) => {
-        this.authService.hideSpinner();
-        this.dataService.showerrorToaster(error);
-      }
-    );
+          this.dataService.showerrorToaster(error?.message ?? String(error));
+        },
+      });
   }
 
   formatString(input: string): string {
@@ -207,20 +242,13 @@ export class AddeditviewtaskComponent implements OnInit {
   }
 
   formatDateToInput(date: Date | null): string {
-    if (date == null) {
-      return ''; // Return empty string if date is null or invalid
+    if (!date || isNaN(date.getTime())) {
+      return '';
     }
-
     const pad = (n: number) => (n < 10 ? '0' + n : n);
-
-    // Subtract 5 hours and 30 minutes
-    const adjustedDate = new Date(date.getTime() - (5 * 60 + 30) * 60000); // Convert 5 hours 30 minutes into milliseconds
-
-    return `${adjustedDate.getFullYear()}-${pad(
-      adjustedDate.getMonth() + 1
-    )}-${pad(adjustedDate.getDate())}T${pad(adjustedDate.getHours())}:${pad(
-      adjustedDate.getMinutes()
-    )}`;
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+      date.getDate()
+    )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
 
   get subtasks(): FormArray {

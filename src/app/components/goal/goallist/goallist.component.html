@@ -1,0 +1,377 @@
+<div class="page goal-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Workspace</span>
+      <h1>Goals</h1>
+      <p class="lede">Define what success looks like, track progress, and check off milestones along the way.</p>
+    </div>
+    <button class="primary-btn" (click)="openCreate()">
+      <i class="fa-solid fa-plus"></i>
+      <span>New goal</span>
+    </button>
+  </header>
+
+  <!-- KPI strip -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <span class="kpi-icon" data-tone="accent"><i class="fa-solid fa-flag-checkered"></i></span>
+      <div class="kpi-text">
+        <span class="kpi-value">{{ totalCount }}</span>
+        <span class="kpi-label">Total goals</span>
+      </div>
+    </div>
+    <div class="kpi">
+      <span class="kpi-icon" data-tone="info"><i class="fa-solid fa-bolt"></i></span>
+      <div class="kpi-text">
+        <span class="kpi-value">{{ activeCount }}</span>
+        <span class="kpi-label">In progress</span>
+      </div>
+    </div>
+    <div class="kpi">
+      <span class="kpi-icon" data-tone="success"><i class="fa-solid fa-circle-check"></i></span>
+      <div class="kpi-text">
+        <span class="kpi-value">{{ completedCount }}</span>
+        <span class="kpi-label">Completed</span>
+      </div>
+    </div>
+    <div class="kpi">
+      <span class="kpi-icon" data-tone="warning"><i class="fa-solid fa-chart-line"></i></span>
+      <div class="kpi-text">
+        <span class="kpi-value">{{ avgProgress }}%</span>
+        <span class="kpi-label">Avg. progress</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input
+        type="text"
+        [(ngModel)]="searchText"
+        (ngModelChange)="onSearchChange()"
+        placeholder="Search goals..."
+      />
+    </div>
+    <div class="toolbar-filters">
+      <app-select
+        [(ngModel)]="filterStatus"
+        (ngModelChange)="onStatusFilter()"
+        [options]="statusOptions"
+        placeholder="Status"
+      ></app-select>
+      <app-select
+        [(ngModel)]="filterCategory"
+        (ngModelChange)="onCategoryFilter()"
+        [options]="categoryFilterOptions"
+        placeholder="Category"
+      ></app-select>
+    </div>
+  </div>
+
+  <!-- Goals list -->
+  <div class="goal-grid" *ngIf="views.length > 0">
+    <article
+      *ngFor="let v of views; trackBy: trackByView"
+      class="goal-card"
+      [attr.data-tone]="v.meta.tone"
+      [class.is-completed]="v.isCompleted"
+      [class.is-paused]="v.isPaused"
+      [class.is-overdue]="v.isOverdue"
+      (click)="openEdit(v.goal)"
+      tabindex="0"
+      (keydown.enter)="openEdit(v.goal)"
+    >
+      <header class="gc-head">
+        <span class="gc-cat">
+          <i [class]="v.meta.icon"></i>
+          <span>{{ v.meta.label }}</span>
+        </span>
+
+        <span class="gc-status" [attr.data-status]="v.goal.status">
+          <span class="gc-status-dot" aria-hidden="true"></span>
+          <span *ngIf="v.goal.status === 'active'">In progress</span>
+          <span *ngIf="v.goal.status === 'completed'">Completed</span>
+          <span *ngIf="v.goal.status === 'paused'">Paused</span>
+        </span>
+      </header>
+
+      <div class="gc-body">
+        <!-- Progress ring -->
+        <div class="gc-ring">
+          <svg viewBox="0 0 64 64" class="ring-svg">
+            <circle class="ring-bg" cx="32" cy="32" r="26"></circle>
+            <circle
+              class="ring-fg"
+              cx="32" cy="32" r="26"
+              [attr.stroke-dasharray]="v.ringDash"
+              transform="rotate(-90 32 32)"
+            ></circle>
+          </svg>
+          <span class="ring-pct">{{ v.pct }}%</span>
+        </div>
+
+        <div class="gc-text">
+          <h3 class="gc-title">{{ v.goal.title }}</h3>
+          <p class="gc-desc" *ngIf="v.goal.description">{{ v.goal.description }}</p>
+
+          <div class="gc-meta">
+            <span class="gc-progress-num">
+              <strong>{{ v.goal.unit }}{{ v.goal.currentValue | number }}</strong>
+              <span class="muted">/ {{ v.goal.unit }}{{ v.goal.targetValue | number }}</span>
+            </span>
+            <span class="gc-due" [class.overdue]="v.isOverdue">
+              <i class="fa-regular fa-calendar"></i>
+              <ng-container *ngIf="v.isCompleted">Done {{ v.goal.updatedAt | date:'MMM d' }}</ng-container>
+              <ng-container *ngIf="!v.isCompleted">
+                <ng-container *ngIf="v.daysLeft >= 0">{{ v.daysLeft }} day{{ v.daysLeft === 1 ? '' : 's' }} left</ng-container>
+                <ng-container *ngIf="v.daysLeft < 0">{{ -v.daysLeft }} day{{ -v.daysLeft === 1 ? '' : 's' }} overdue</ng-container>
+              </ng-container>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Milestones -->
+      <div class="gc-milestones" *ngIf="v.milestonesTotal > 0">
+        <header>
+          <span><i class="fa-solid fa-flag"></i> Milestones</span>
+          <span class="muted">{{ v.milestonesDone }} / {{ v.milestonesTotal }}</span>
+        </header>
+        <ul>
+          <li
+            *ngFor="let m of v.goal.milestones; trackBy: trackMilestone"
+            [class.done]="m.done"
+            (click)="toggleMilestone(v, m, $event)"
+          >
+            <span class="m-check"><i class="fa-solid fa-check"></i></span>
+            <span class="m-label">{{ m.label }}</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Footer actions -->
+      <footer class="gc-foot">
+        <div class="bump-group" *ngIf="!v.isCompleted">
+          <button
+            type="button"
+            class="bump-btn"
+            (click)="bumpProgress(v, -1, $event)"
+            [disabled]="v.goal.currentValue <= 0"
+            aria-label="Decrease progress"
+          >
+            <i class="fa-solid fa-minus"></i>
+          </button>
+          <button
+            type="button"
+            class="bump-btn primary"
+            (click)="bumpProgress(v, 1, $event)"
+            [disabled]="v.goal.currentValue >= v.goal.targetValue"
+            aria-label="Increase progress"
+          >
+            <i class="fa-solid fa-plus"></i>
+          </button>
+        </div>
+
+        <div class="row-actions">
+          <button
+            type="button"
+            class="row-btn"
+            (click)="toggleStatus(v, $event)"
+            *ngIf="!v.isCompleted"
+          >
+            <i class="fa-solid" [ngClass]="v.isPaused ? 'fa-play' : 'fa-pause'"></i>
+            <span>{{ v.isPaused ? 'Resume' : 'Pause' }}</span>
+          </button>
+          <button type="button" class="row-btn danger" (click)="remove(v, $event)">
+            <i class="fa-solid fa-trash"></i>
+            <span>Delete</span>
+          </button>
+        </div>
+      </footer>
+    </article>
+  </div>
+
+  <!-- Empty state -->
+  <div class="empty-state" *ngIf="views.length === 0">
+    <div class="empty-illu" aria-hidden="true">
+      <i class="fa-solid fa-flag-checkered"></i>
+    </div>
+    <h3 *ngIf="totalCount === 0">No goals yet</h3>
+    <h3 *ngIf="totalCount > 0">No goals match this filter</h3>
+    <p *ngIf="totalCount === 0">Set your first goal — pick something specific you can measure and check in on.</p>
+    <p *ngIf="totalCount > 0">Try a different status, category, or search term.</p>
+    <button class="primary-btn" (click)="openCreate()" *ngIf="totalCount === 0">
+      <i class="fa-solid fa-plus"></i>
+      <span>New goal</span>
+    </button>
+  </div>
+</div>
+
+<!-- ============ Editor modal ============ -->
+<div class="ed-backdrop" *ngIf="editorOpen" (click)="closeEditor()" role="dialog" aria-modal="true">
+  <div class="ed-panel" (click)="$event.stopPropagation()">
+    <header class="ed-head">
+      <div class="ed-titles">
+        <span class="ed-eyebrow">{{ editing ? 'Edit goal' : 'New goal' }}</span>
+        <h2>{{ editing ? 'Refine your goal' : 'Set a new goal' }}</h2>
+      </div>
+      <button type="button" class="icon-btn" (click)="closeEditor()" aria-label="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </header>
+
+    <div class="ed-body">
+      <div class="ed-row">
+        <label>Title</label>
+        <input
+          class="ed-input"
+          type="text"
+          [(ngModel)]="draft.title"
+          placeholder="e.g. Save 6 months of expenses"
+          maxlength="120"
+        />
+      </div>
+
+      <div class="ed-row">
+        <label>Description</label>
+        <textarea
+          class="ed-textarea"
+          [(ngModel)]="draft.description"
+          rows="3"
+          placeholder="Why this goal matters and how you'll achieve it"
+        ></textarea>
+      </div>
+
+      <div class="ed-grid">
+        <div class="ed-row">
+          <label>Category</label>
+          <app-select
+            [(ngModel)]="draft.category"
+            [options]="categoryOptions"
+          ></app-select>
+        </div>
+        <div class="ed-row">
+          <label>Status</label>
+          <app-select
+            [(ngModel)]="draft.status"
+            [options]="editorStatusOptions"
+          ></app-select>
+        </div>
+      </div>
+
+      <div class="ed-grid ed-grid-3">
+        <div class="ed-row">
+          <label>Target value</label>
+          <input
+            class="ed-input"
+            type="number"
+            min="0"
+            [(ngModel)]="draft.targetValue"
+            placeholder="e.g. 300000"
+          />
+        </div>
+        <div class="ed-row">
+          <label>Current value</label>
+          <input
+            class="ed-input"
+            type="number"
+            min="0"
+            [(ngModel)]="draft.currentValue"
+            placeholder="0"
+          />
+        </div>
+        <div class="ed-row">
+          <label>Unit</label>
+          <input
+            class="ed-input"
+            type="text"
+            [(ngModel)]="draft.unit"
+            placeholder="₹, books, kg..."
+            maxlength="12"
+          />
+        </div>
+      </div>
+
+      <div class="ed-grid">
+        <div class="ed-row">
+          <label>Start date</label>
+          <app-datetime-picker
+            [(ngModel)]="draft.startDate"
+            [includeTime]="false"
+          ></app-datetime-picker>
+        </div>
+        <div class="ed-row">
+          <label>Due date</label>
+          <app-datetime-picker
+            [(ngModel)]="draft.dueDate"
+            [includeTime]="false"
+          ></app-datetime-picker>
+        </div>
+      </div>
+
+      <!-- Milestones editor -->
+      <div class="ed-row">
+        <label>Milestones</label>
+        <div class="ms-list" *ngIf="draft.milestones.length > 0">
+          <div
+            *ngFor="let m of draft.milestones; let i = index; trackBy: trackMilestone"
+            class="ms-item"
+            [class.done]="m.done"
+          >
+            <button
+              type="button"
+              class="m-check-btn"
+              (click)="toggleDraftMilestone(i)"
+              [attr.aria-pressed]="m.done"
+            >
+              <i class="fa-solid fa-check"></i>
+            </button>
+            <input
+              class="ms-input"
+              type="text"
+              [(ngModel)]="m.label"
+              placeholder="Milestone label"
+            />
+            <button
+              type="button"
+              class="ms-remove"
+              (click)="removeMilestoneFromDraft(i)"
+              aria-label="Remove milestone"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="ms-add">
+          <input
+            class="ed-input"
+            type="text"
+            [(ngModel)]="newMilestoneLabel"
+            placeholder="Add a milestone and press +"
+            (keydown.enter)="addMilestoneToDraft(); $event.preventDefault()"
+          />
+          <button
+            type="button"
+            class="ghost-btn small"
+            (click)="addMilestoneToDraft()"
+            [disabled]="!newMilestoneLabel.trim()"
+          >
+            <i class="fa-solid fa-plus"></i>
+            <span>Add</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="ed-foot">
+      <button type="button" class="ghost-btn" (click)="closeEditor()">Cancel</button>
+      <button type="button" class="primary-btn" (click)="save()">
+        <i class="fa-solid fa-floppy-disk"></i>
+        <span>{{ editing ? 'Save changes' : 'Create goal' }}</span>
+      </button>
+    </footer>
+  </div>
+</div>

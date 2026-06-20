@@ -1,0 +1,143 @@
+<div class="page">
+  <div class="page-header">
+    <span class="eyebrow">Investments</span>
+    <h1>{{ operationHeader }}</h1>
+    <p class="lede">
+      <ng-container [ngSwitch]="operationHeader">
+        <span *ngSwitchCase="'Add Investment'">Capture a new holding to track its performance.</span>
+        <span *ngSwitchCase="'Edit Investment'">Update the latest values for this position.</span>
+        <span *ngSwitchDefault>Read-only view of this investment.</span>
+      </ng-container>
+    </p>
+  </div>
+
+  <form class="form-card" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="grid">
+      <div class="field">
+        <label>Investment name <span class="req">*</span></label>
+        <input type="text" formControlName="name" placeholder="e.g. Apple Inc." />
+        <p class="error" *ngIf="form.get('name')?.invalid && form.get('name')?.touched">
+          Name is required.
+        </p>
+      </div>
+
+      <div class="field">
+        <label>Type <span class="req">*</span></label>
+        <app-select
+          formControlName="type"
+          placeholder="Select type"
+          leadingIcon="fa-solid fa-layer-group"
+          [options]="typeOptions"
+        ></app-select>
+      </div>
+
+      <div class="field">
+        <label>Amount Invested (₹) <span class="req">*</span></label>
+        <input type="number" formControlName="amount" min="0" />
+        <p class="error" *ngIf="form.get('amount')?.invalid && form.get('amount')?.touched">
+          Enter a positive amount.
+        </p>
+      </div>
+
+      <div class="field">
+        <label>Current Value (₹) <span class="req">*</span></label>
+        <input type="number" formControlName="currentValue" min="0" />
+        <p class="error" *ngIf="form.get('currentValue')?.invalid && form.get('currentValue')?.touched">
+          Enter the current value.
+        </p>
+      </div>
+
+      <div class="field">
+        <label>Start Date <span class="req">*</span></label>
+        <app-datetime-picker
+          formControlName="startDate"
+          [includeTime]="false"
+          placeholder="Pick a start date"
+        ></app-datetime-picker>
+        <p class="error" *ngIf="form.get('startDate')?.invalid && form.get('startDate')?.touched">
+          Start date is required.
+        </p>
+      </div>
+
+      <div class="field">
+        <label>Maturity Date <small>(optional)</small></label>
+        <app-datetime-picker
+          formControlName="maturityDate"
+          [includeTime]="false"
+          placeholder="Pick a maturity date"
+        ></app-datetime-picker>
+      </div>
+
+      <div class="field">
+        <label>Risk</label>
+        <div class="segmented">
+          <button
+            *ngFor="let r of risks"
+            type="button"
+            class="seg"
+            [class.active]="form.get('risk')?.value === r"
+            (click)="!isViewMode && form.get('risk')?.setValue(r)"
+            [disabled]="isViewMode"
+          >{{ r }}</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <div class="segmented">
+          <button
+            *ngFor="let s of statuses"
+            type="button"
+            class="seg"
+            [class.active]="form.get('status')?.value === s"
+            (click)="!isViewMode && form.get('status')?.setValue(s)"
+            [disabled]="isViewMode"
+          >{{ s }}</button>
+        </div>
+      </div>
+
+      <div class="field span-2">
+        <label>Notes <small>(optional)</small></label>
+        <textarea
+          formControlName="notes"
+          rows="3"
+          placeholder="Strategy, broker, lot size, etc."
+        ></textarea>
+      </div>
+    </div>
+
+    <!-- Live preview -->
+    <div class="preview" *ngIf="form.get('amount')?.value">
+      <div>
+        <span>Projected P/L</span>
+        <strong [class.up]="gainPreview >= 0" [class.down]="gainPreview < 0">
+          {{ gainPreview >= 0 ? '+' : '' }}₹{{ gainPreview | number:'1.0-0' }}
+        </strong>
+      </div>
+      <div>
+        <span>P/L %</span>
+        <strong [class.up]="gainPreview >= 0" [class.down]="gainPreview < 0">
+          {{ gainPctPreview | number:'1.1-2' }}%
+        </strong>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="submit" class="primary-btn" *ngIf="!isViewMode">
+        <i class="fa-solid fa-floppy-disk"></i>
+        <span>{{ investmentId ? 'Save changes' : 'Create' }}</span>
+      </button>
+      <button
+        type="button"
+        class="ghost-btn"
+        (click)="onReset()"
+        *ngIf="!isViewMode"
+      >
+        <i class="fa-solid fa-rotate-left"></i> Reset
+      </button>
+      <button type="button" class="cancel-btn" (click)="onCancel()">
+        <i class="fa-solid fa-xmark"></i> Cancel
+      </button>
+    </div>
+  </form>
+</div>

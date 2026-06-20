@@ -1,175 +1,306 @@
-<ngx-spinner
-  bdColor="rgba(0, 0, 0, 0.8)"
-  size="medium"
-  color="#fff"
-  type="ball-atom"
-  [fullScreen]="true"
-  ><p style="color: white">Loading...</p></ngx-spinner
->
-<!-- list.component.html -->
-
-<div class="container mt-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div class="card border-light rounded-4">
-      <div class="card-body d-flex align-items-center bg-body-tertiary p-3">
-        <i class="fa-regular fa-paste me-3 text-secondary-emphasis"></i>
-        <h5 class="mb-0">Task Details</h5>
-      </div>
+<div class="page">
+  <!-- Hero -->
+  <header class="hero">
+    <div class="hero-text">
+      <span class="eyebrow">Day-to-day monitor</span>
+      <h1>{{ greeting }}<span *ngIf="userName">, <em>{{ userName }}</em></span></h1>
+      <p class="lede">
+        <i class="fa-regular fa-calendar"></i> {{ todayLabel }}
+        <span class="dot-sep">•</span>
+        <strong>{{ todaysTasks.length }}</strong> due today
+        <span class="dot-sep" *ngIf="overdueCount > 0">•</span>
+        <strong class="text-danger" *ngIf="overdueCount > 0">{{ overdueCount }} overdue</strong>
+      </p>
     </div>
+    <div class="hero-actions">
+      <button class="primary-btn" (click)="addItem()">
+        <i class="fa-solid fa-plus"></i>
+        <span>Add Task</span>
+      </button>
+    </div>
+  </header>
 
-    <button
-      class="btn btn-md btn-outline-success d-flex align-items-center"
-      (click)="addItem()"
-    >
-      <i class="fa-solid fa-plus me-2"></i>
-      Add Task
+  <!-- 6 dedicated KPI cards -->
+  <section class="kpi-grid">
+    <button class="kpi kpi-high" type="button" (click)="setFilter('all')">
+      <div class="kpi-icon"><i class="fa-solid fa-fire"></i></div>
+      <div class="kpi-body">
+        <span class="kpi-label">High Priority</span>
+        <span class="kpi-value">{{ highCount }}</span>
+        <span class="kpi-sub">Open &amp; urgent</span>
+      </div>
     </button>
-  </div>
 
-  <div class="container">
-    <div class="row text-center">
-      <div class="col-md-3 mb-4">
-        <div class="card bg-danger text-white">
-          <div class="card-body">
-            <h4 class="card-title">{{ highpriority }}</h4>
-            <p class="card-text">High</p>
-          </div>
-        </div>
+    <button class="kpi kpi-medium" type="button" (click)="setFilter('all')">
+      <div class="kpi-icon"><i class="fa-solid fa-bolt"></i></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Medium Priority</span>
+        <span class="kpi-value">{{ mediumCount }}</span>
+        <span class="kpi-sub">In flight</span>
       </div>
-      <div class="col-md-3 mb-4">
-        <div class="card bg-warning text-dark">
-          <div class="card-body">
-            <h4 class="card-title">{{ mediumpriority }}</h4>
-            <p class="card-text">Medium</p>
-          </div>
-        </div>
+    </button>
+
+    <button class="kpi kpi-low" type="button" (click)="setFilter('all')">
+      <div class="kpi-icon"><i class="fa-regular fa-circle"></i></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Low Priority</span>
+        <span class="kpi-value">{{ lowCount }}</span>
+        <span class="kpi-sub">Backlog</span>
       </div>
-      <div class="col-md-3 mb-4">
-        <div class="card bg-primary text-white">
-          <div class="card-body">
-            <h4 class="card-title">{{ lowpriority }}</h4>
-            <p class="card-text">Low</p>
-          </div>
-        </div>
+    </button>
+
+    <button class="kpi kpi-wip" type="button" (click)="setFilter('partiallyCompleted')">
+      <div class="kpi-icon"><i class="fa-solid fa-spinner"></i></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Work In Progress</span>
+        <span class="kpi-value">{{ wipCount }}</span>
+        <span class="kpi-sub">Currently working on</span>
       </div>
-      <div class="col-md-3 mb-4">
-        <div class="card bg-success text-white">
-          <div class="card-body">
-            <h4 class="card-title">{{ donepriority }}</h4>
-            <p class="card-text">Done</p>
-          </div>
-        </div>
+    </button>
+
+    <button class="kpi kpi-finished" type="button" (click)="setFilter('completed')">
+      <div class="kpi-icon"><i class="fa-solid fa-circle-check"></i></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Finished</span>
+        <span class="kpi-value">{{ finishedCount }}</span>
+        <span class="kpi-sub">Completed tasks</span>
       </div>
+    </button>
+
+    <button class="kpi kpi-not-completed" type="button" (click)="setFilter('notStarted')">
+      <div class="kpi-icon"><i class="fa-solid fa-hourglass-start"></i></div>
+      <div class="kpi-body">
+        <span class="kpi-label">Not Completed</span>
+        <span class="kpi-value">{{ notCompletedCount }}</span>
+        <span class="kpi-sub">Yet to start</span>
+      </div>
+    </button>
+  </section>
+
+  <!-- 7-day activity strip -->
+  <section class="week-strip">
+    <div class="strip-header">
+      <h2><i class="fa-regular fa-calendar-check"></i> This week at a glance</h2>
+      <span class="muted">Tasks due in the next 7 days</span>
     </div>
-  </div>
-
-  <div class="chart-container">
-    <highcharts-chart
-      [Highcharts]="Highcharts"
-      [options]="chartOptions"
-      style="width: 48%; height: 400px; display: block"
-    ></highcharts-chart>
-
-    <highcharts-chart
-      [Highcharts]="Highcharts"
-      [options]="barchartOptions"
-      style="width: 48%; height: 400px; display: block"
-    ></highcharts-chart>
-  </div>
-
-  <div class="input-group mb-4 mt-2">
-    <span
-      class="input-group-text bg-secondary-subtle border-3"
-      id="search-icon"
-    >
-      <i class="fa-solid fa-magnifying-glass"></i>
-    </span>
-    <input
-      type="text"
-      class="form-control border-0 shadow-sm"
-      placeholder="Search items..."
-      [(ngModel)]="searchText"
-      aria-label="Search"
-      aria-describedby="search-icon"
-    />
-  </div>
-
-  <div class="row" *ngIf="filteredItems.length > 0">
-    <div
-      class="col-md-6 col-lg-4 mb-4"
-      *ngFor="
-        let item of filteredItems
-          | paginate : { itemsPerPage: itemsPerPage, currentPage: currentPage }
-      "
-    >
-      <div
-        class="card h-100"
-        [ngStyle]="{
-          opacity: item.isDeleted ? '0.6' : '1',
-          'pointer-events': item.isDeleted ? 'none' : 'auto'
-        }"
-        [ngClass]="getCardClass(item.priority, item.isDeleted, item.taskStatus)"
+    <div class="strip">
+      <button
+        *ngFor="let day of weekStrip"
+        type="button"
+        class="day"
+        [class.today]="day.isToday"
+        [class.active]="selectedDayIso === day.iso"
+        [class.has-high]="day.highCount > 0"
+        (click)="selectDay(day.iso)"
       >
-        <div class="card-body">
-          <p
-            class="card-text mb-2 text-center text-white-100 text-bg-secondary rounded-4"
-            *ngIf="item.isDeleted"
-          >
-            Task Deleted
-          </p>
+        <span class="day-name">{{ day.label }}</span>
+        <span class="day-num">{{ day.dateLabel }}</span>
+        <span class="day-month">{{ day.monthLabel }}</span>
+        <span class="day-badge" *ngIf="day.count > 0">{{ day.count }}</span>
+        <span class="day-pulse" *ngIf="day.highCount > 0" title="High priority"></span>
+      </button>
+    </div>
 
-          <h5 class="card-title mb-3">{{ item.subject }}</h5>
-          <p class="card-text text-muted">
-            <span class="fw-bold">Start Date:</span>
-            {{ item.startDate | date : "fullDate" }}
-          </p>
-          <p class="card-text text-muted">
-            <span class="fw-bold">End Date:</span>
-            {{ item.endDate | date : "fullDate" }}
-          </p>
-          <p class="card-text text-muted">
-            <span class="fw-bold">Status:</span>
-            {{ item.taskStatus | sentenceCase }}
-            <span
-              *ngIf="item.taskStatus === 'completed'"
-              class="status-indicator"
-            >
-              <span class="dot"></span>
-            </span>
+    <div class="day-detail" *ngIf="tasksForSelectedDay().length > 0; else noDayTasks">
+      <ul>
+        <li *ngFor="let t of tasksForSelectedDay()" class="day-row">
+          <span class="dot" [ngClass]="priorityClass(t.priority)"></span>
+          <span class="row-title">{{ t.subject }}</span>
+          <span class="row-status status-{{ statusKey(t) }}">
+            <i
+              class="fa-solid"
+              [ngClass]="{
+                'fa-circle-check': statusKey(t) === 'completed',
+                'fa-spinner': statusKey(t) === 'partiallyCompleted',
+                'fa-hourglass-start': statusKey(t) === 'notStarted',
+                'fa-triangle-exclamation': statusKey(t) === 'overdue'
+              }"
+            ></i>
+            {{ statusKey(t) === 'overdue' ? 'Overdue' : (t.taskStatus | sentenceCase) }}
+          </span>
+          <button class="row-action" (click)="view(t._id)" aria-label="View">
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </li>
+      </ul>
+    </div>
+    <ng-template #noDayTasks>
+      <div class="day-detail empty">
+        <i class="fa-regular fa-face-smile"></i>
+        Nothing due this day. Enjoy the breathing room.
+      </div>
+    </ng-template>
+  </section>
+
+  <!-- Day-to-day activity panels -->
+  <section class="activity-grid" *ngIf="hasActivity(); else activityEmpty">
+    <article class="activity-card" *ngIf="todaysTasks.length > 0">
+      <header>
+        <h3><i class="fa-solid fa-bullseye"></i> Today's focus</h3>
+        <span class="count-pill">{{ todaysTasks.length }}</span>
+      </header>
+      <ul>
+        <li *ngFor="let t of todaysTasks" (click)="view(t._id)">
+          <span class="dot" [ngClass]="priorityClass(t.priority)"></span>
+          <div class="meta">
+            <strong>{{ t.subject }}</strong>
+            <small>{{ t.priority }} · {{ t.taskStatus | sentenceCase }}</small>
+          </div>
+          <i class="fa-solid fa-chevron-right"></i>
+        </li>
+      </ul>
+    </article>
+
+    <article class="activity-card overdue" *ngIf="overdueTasks.length > 0">
+      <header>
+        <h3><i class="fa-solid fa-triangle-exclamation"></i> Overdue</h3>
+        <span class="count-pill danger">{{ overdueTasks.length }}</span>
+      </header>
+      <ul>
+        <li *ngFor="let t of overdueTasks.slice(0, 5)" (click)="view(t._id)">
+          <span class="dot" [ngClass]="priorityClass(t.priority)"></span>
+          <div class="meta">
+            <strong>{{ t.subject }}</strong>
+            <small>Due {{ t.endDate | date:'mediumDate' }} · {{ daysUntil(t.endDate) }}</small>
+          </div>
+          <i class="fa-solid fa-chevron-right"></i>
+        </li>
+      </ul>
+    </article>
+
+    <article class="activity-card upcoming" *ngIf="upcomingTasks.length > 0">
+      <header>
+        <h3><i class="fa-regular fa-clock"></i> Coming up</h3>
+        <span class="count-pill">{{ upcomingTasks.length }}</span>
+      </header>
+      <ul>
+        <li *ngFor="let t of upcomingTasks" (click)="view(t._id)">
+          <span class="dot" [ngClass]="priorityClass(t.priority)"></span>
+          <div class="meta">
+            <strong>{{ t.subject }}</strong>
+            <small>{{ daysUntil(t.endDate) }} · {{ t.endDate | date:'mediumDate' }}</small>
+          </div>
+          <i class="fa-solid fa-chevron-right"></i>
+        </li>
+      </ul>
+    </article>
+  </section>
+
+  <!-- Friendly single-card empty state when none of the buckets has anything -->
+  <ng-template #activityEmpty>
+    <section class="activity-empty" *ngIf="items.length === 0; else allCaughtUp">
+      <div class="empty-icon"><i class="fa-solid fa-clipboard-list"></i></div>
+      <div class="empty-body">
+        <h3>No tasks yet</h3>
+        <p>Add your first task and I'll surface what needs your attention here.</p>
+      </div>
+      <button class="primary-btn" (click)="addItem()">
+        <i class="fa-solid fa-plus"></i>
+        <span>Add Task</span>
+      </button>
+    </section>
+    <ng-template #allCaughtUp>
+      <section class="activity-empty good">
+        <div class="empty-icon good"><i class="fa-solid fa-circle-check"></i></div>
+        <div class="empty-body">
+          <h3>You're all caught up</h3>
+          <p>
+            Nothing due today, nothing overdue, and no tasks scheduled in the next 30 days.
+            See your full backlog below.
           </p>
         </div>
-        <div class="card-footer d-flex justify-content-between">
-          <button
-            class="btn btn-primary d-flex align-items-center"
-            (click)="editviewDetails(item._id, 'Edit')"
-          >
-            <i class="fa-solid fa-square-pen me-2"></i>
-            Edit
-          </button>
-          <button
-            class="btn btn-secondary d-flex align-items-center"
-            (click)="editviewDetails(item._id, 'View')"
-          >
-            <i class="fa-solid fa-list me-2"></i>
-            View
-          </button>
-          <button
-            class="btn btn-danger d-flex align-items-center"
-            (click)="deleteItem(item._id)"
-          >
-            <i class="fa-regular fa-trash-can me-2"></i>
-            Delete
-          </button>
+        <button class="primary-btn" (click)="addItem()">
+          <i class="fa-solid fa-plus"></i>
+          <span>Add Task</span>
+        </button>
+      </section>
+    </ng-template>
+  </ng-template>
+
+  <!-- All tasks -->
+  <section class="tasks-section">
+    <div class="section-header">
+      <h2><i class="fa-solid fa-list-ul"></i> All tasks</h2>
+      <div class="filters">
+        <div class="search-input">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input
+            type="text"
+            placeholder="Search tasks..."
+            [(ngModel)]="searchText"
+          />
+        </div>
+        <div class="chips">
+          <button class="chip" [class.active]="statusFilter === 'all'" (click)="setFilter('all')">All</button>
+          <button class="chip" [class.active]="statusFilter === 'notStarted'" (click)="setFilter('notStarted')">Not Started</button>
+          <button class="chip" [class.active]="statusFilter === 'partiallyCompleted'" (click)="setFilter('partiallyCompleted')">In Progress</button>
+          <button class="chip" [class.active]="statusFilter === 'completed'" (click)="setFilter('completed')">Completed</button>
+          <button class="chip danger" [class.active]="statusFilter === 'overdue'" (click)="setFilter('overdue')">Overdue</button>
         </div>
       </div>
     </div>
-  </div>
 
-  <div *ngIf="filteredItems.length === 0" class="text-center">
-    <p>No tasks available.</p>
-  </div>
+    <div class="cards" *ngIf="filteredItems.length > 0; else emptyTpl">
+      <article
+        class="task-card"
+        *ngFor="
+          let item of filteredItems
+            | paginate : { itemsPerPage: itemsPerPage, currentPage: currentPage }
+        "
+        [class.deleted]="item.isDeleted"
+        [class.is-overdue]="isOverdue(item)"
+        [ngClass]="priorityClass(item.priority)"
+      >
+        <div class="task-head">
+          <span class="priority-pill" [ngClass]="priorityClass(item.priority)">
+            {{ item.priority }}
+          </span>
+          <span class="status-pill status-{{ statusKey(item) }}">
+            {{ statusKey(item) === 'overdue' ? 'Overdue' : (item.taskStatus | sentenceCase) }}
+          </span>
+        </div>
 
-  <pagination-controls
-    (pageChange)="currentPage = $event"
-  ></pagination-controls>
+        <h3 class="task-title">{{ item.subject }}</h3>
+        <p class="task-desc" *ngIf="item.description">{{ item.description }}</p>
+
+        <div class="task-dates">
+          <span><i class="fa-regular fa-calendar"></i> {{ item.endDate | date:'mediumDate' }}</span>
+          <span class="due">{{ daysUntil(item.endDate) }}</span>
+        </div>
+
+        <div class="task-actions">
+          <button class="btn-action view" (click)="view(item._id)" [disabled]="item.isDeleted">
+            <i class="fa-solid fa-eye"></i> View
+          </button>
+          <button class="btn-action edit" (click)="edit(item._id)" [disabled]="item.isDeleted">
+            <i class="fa-solid fa-pen"></i> Edit
+          </button>
+          <button class="btn-action delete" (click)="deleteItem(item._id)" [disabled]="item.isDeleted">
+            <i class="fa-solid fa-trash"></i> Delete
+          </button>
+        </div>
+
+        <div class="deleted-banner" *ngIf="item.isDeleted">Deleted</div>
+      </article>
+    </div>
+
+    <ng-template #emptyTpl>
+      <div class="empty-state">
+        <div class="empty-icon">
+          <i class="fa-solid fa-clipboard-list"></i>
+        </div>
+        <h3>No tasks match this filter</h3>
+        <p>Adjust your filters or create a new task to get started.</p>
+        <button class="primary-btn" (click)="addItem()">
+          <i class="fa-solid fa-plus"></i>
+          <span>Add Task</span>
+        </button>
+      </div>
+    </ng-template>
+
+    <pagination-controls
+      *ngIf="filteredItems.length > itemsPerPage"
+      (pageChange)="currentPage = $event"
+    ></pagination-controls>
+  </section>
 </div>

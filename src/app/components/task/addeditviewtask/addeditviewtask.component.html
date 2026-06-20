@@ -1,290 +1,187 @@
-<ngx-spinner
-  bdColor="rgba(0, 0, 0, 0.8)"
-  size="medium"
-  color="#fff"
-  type="ball-atom"
-  [fullScreen]="true"
-  ><p style="color: white">Loading...</p></ngx-spinner
->
-<div class="container mt-5">
-  <h2 class="mb-4 text-center">{{ operationHeader }}</h2>
-  <form [formGroup]="taskForm" (ngSubmit)="onSubmit()">
-    <!-- Subject and Priority in one row -->
-    <div class="row mb-3">
-      <div class="col-md-6">
-        <label for="subject" class="form-label">
-          Subject <span class="text-danger">*</span>
-        </label>
+<div class="page">
+  <div class="page-header">
+    <span class="eyebrow">Tasks</span>
+    <h1>{{ operationHeader }}</h1>
+    <p class="lede">
+      <ng-container [ngSwitch]="operationHeader">
+        <span *ngSwitchCase="'Add Task'">Plan a new piece of work with priority, dates and sub-tasks.</span>
+        <span *ngSwitchCase="'Edit Task'">Update the details, status or sub-tasks for this item.</span>
+        <span *ngSwitchDefault>Read-only view of this task.</span>
+      </ng-container>
+    </p>
+  </div>
+
+  <form class="form-card" [formGroup]="taskForm" (ngSubmit)="onSubmit()">
+    <div class="grid">
+      <div class="field span-2">
+        <label>Subject <span class="req">*</span></label>
         <input
           type="text"
-          id="subject"
-          class="form-control"
-          autocomplete="off"
           formControlName="subject"
-          placeholder="Enter subject"
-          [ngClass]="{ 'disabled-input': isViewMode }"
+          placeholder="What needs to be done?"
+          autocomplete="off"
+          [class.disabled-input]="isViewMode"
         />
-        <div
-          class="invalid-feedback d-block"
-          *ngIf="
-            taskForm?.get('subject')?.invalid &&
-            taskForm?.get('subject')?.touched
-          "
-        >
+        <p class="error" *ngIf="taskForm.get('subject')?.invalid && taskForm.get('subject')?.touched">
           Subject is required.
-        </div>
+        </p>
       </div>
-      <div class="col-md-6">
-        <label for="priority" class="form-label"
-          >Priority <span class="text-danger">*</span></label
-        >
-        <select
-          id="priority"
-          class="form-select"
+
+      <div class="field">
+        <label>Priority <span class="req">*</span></label>
+        <app-select
           formControlName="priority"
-          [ngClass]="{ 'disabled-input': isViewMode }"
-        >
-          <option *ngFor="let priority of priorities" [value]="priority">
-            {{ priority }}
-          </option>
-        </select>
-        <div
-          class="invalid-feedback d-block"
-          *ngIf="
-            taskForm?.get('priority')?.invalid &&
-            taskForm?.get('priority')?.touched
-          "
-        >
+          placeholder="Select priority"
+          leadingIcon="fa-solid fa-flag"
+          [options]="priorityOptions"
+        ></app-select>
+        <p class="error" *ngIf="taskForm.get('priority')?.invalid && taskForm.get('priority')?.touched">
           Priority is required.
-        </div>
-      </div>
-    </div>
-
-    <!-- Description taking whole row -->
-    <div class="mb-3">
-      <label for="description" class="form-label"
-        >Description <span class="text-danger">*</span></label
-      >
-      <textarea
-        id="description"
-        class="form-control"
-        formControlName="description"
-        autocomplete="off"
-        (keydown)="onKeyDown($event)"
-        rows="4"
-        placeholder="Enter description"
-        [ngClass]="{ 'disabled-input': isViewMode }"
-      ></textarea>
-      <div
-        class="invalid-feedback d-block"
-        *ngIf="
-          taskForm?.get('description')?.invalid &&
-          taskForm?.get('description')?.touched
-        "
-      >
-        Description is required.
-      </div>
-    </div>
-
-    <!-- Start Date and End Date in one row -->
-    <div class="row mb-3">
-      <div class="col-md-6">
-        <label for="startDate" class="form-label"
-          >Start Date <span class="text-danger">*</span></label
-        >
-        <input
-          type="datetime-local"
-          id="startDate"
-          class="form-control"
-          autocomplete="off"
-          formControlName="startDate"
-          [ngClass]="{ 'disabled-input': isViewMode }"
-        />
-        <div
-          class="invalid-feedback d-block"
-          *ngIf="
-            taskForm?.get('startDate')?.invalid &&
-            taskForm?.get('startDate')?.touched
-          "
-        >
-          Start Date is required.
-        </div>
-      </div>
-      <div class="col-md-6">
-        <label for="endDate" class="form-label"
-          >End Date <span class="text-danger">*</span></label
-        >
-        <input
-          type="datetime-local"
-          id="endDate"
-          autocomplete="off"
-          class="form-control"
-          formControlName="endDate"
-          [ngClass]="{ 'disabled-input': isViewMode }"
-        />
-        <div
-          class="invalid-feedback d-block"
-          *ngIf="
-            taskForm?.get('endDate')?.invalid &&
-            taskForm?.get('endDate')?.touched
-          "
-        >
-          End Date is required.
-        </div>
-      </div>
-    </div>
-
-    <!-- Checkboxes in one row -->
-    <div class="row mb-3 d-flex justify-content-between">
-      <!-- Task Status (left side) -->
-      <div class="col-md-6">
-        <label class="form-label">Task Status</label>
-        <div class="form-check">
-          <input
-            type="radio"
-            class="form-check-input"
-            id="notStarted"
-            formControlName="taskStatus"
-            value="notStarted"
-            [ngClass]="{ 'disabled-input': isViewMode }"
-          />
-          <label class="form-check-label" for="notStarted">Not Started</label>
-        </div>
-        <div class="form-check">
-          <input
-            type="radio"
-            class="form-check-input"
-            id="partiallyCompleted"
-            formControlName="taskStatus"
-            value="partiallyCompleted"
-            [ngClass]="{ 'disabled-input': isViewMode }"
-          />
-          <label class="form-check-label" for="partiallyCompleted"
-            >Partially Completed</label
-          >
-        </div>
-        <div class="form-check">
-          <input
-            type="radio"
-            class="form-check-input"
-            id="completed"
-            formControlName="taskStatus"
-            value="completed"
-            [ngClass]="{ 'disabled-input': isViewMode }"
-          />
-          <label class="form-check-label" for="completed">Completed</label>
-        </div>
+        </p>
       </div>
 
-      <!-- Checkboxes (right side) -->
-      <div class="col-md-6 d-flex flex-column align-items-start">
-        <!-- Remainder Checkbox -->
-        <div class="form-check mb-2">
-          <input
-            type="checkbox"
-            id="isRemainder"
-            class="form-check-input"
-            formControlName="isRemainder"
-            [ngClass]="{ 'disabled-input': isViewMode }"
-          />
-          <label class="form-check-label" for="isRemainder">
-            Do you want to set reminder?
+      <div class="field">
+        <label>Status</label>
+        <div class="segmented">
+          <label *ngFor="let s of [
+            { v: 'notStarted', l: 'Not Started' },
+            { v: 'partiallyCompleted', l: 'In Progress' },
+            { v: 'completed', l: 'Completed' }
+          ]" class="seg" [class.active]="taskForm.get('taskStatus')?.value === s.v">
+            <input
+              type="radio"
+              [value]="s.v"
+              formControlName="taskStatus"
+              [disabled]="isViewMode"
+            />
+            {{ s.l }}
           </label>
         </div>
+      </div>
 
-        <!-- Sub-Task Checkbox -->
-        <div class="form-check">
+      <div class="field span-2">
+        <label>Description <span class="req">*</span></label>
+        <textarea
+          rows="4"
+          formControlName="description"
+          placeholder="Add context, links and acceptance criteria..."
+          autocomplete="off"
+          (keydown)="onKeyDown($event)"
+          [class.disabled-input]="isViewMode"
+        ></textarea>
+        <p class="error" *ngIf="taskForm.get('description')?.invalid && taskForm.get('description')?.touched">
+          Description is required.
+        </p>
+      </div>
+
+      <div class="field">
+        <label>Start Date <span class="req">*</span></label>
+        <app-datetime-picker
+          formControlName="startDate"
+          [includeTime]="true"
+          placeholder="Pick a start date &amp; time"
+        ></app-datetime-picker>
+        <p class="error" *ngIf="taskForm.get('startDate')?.invalid && taskForm.get('startDate')?.touched">
+          Start date is required.
+        </p>
+      </div>
+
+      <div class="field">
+        <label>End Date <span class="req">*</span></label>
+        <app-datetime-picker
+          formControlName="endDate"
+          [includeTime]="true"
+          placeholder="Pick an end date &amp; time"
+        ></app-datetime-picker>
+        <p class="error" *ngIf="taskForm.get('endDate')?.invalid && taskForm.get('endDate')?.touched">
+          End date is required.
+        </p>
+      </div>
+
+      <div class="field">
+        <label>Reminder</label>
+        <label class="switch">
           <input
             type="checkbox"
-            class="form-check-input"
-            id="isSubTask"
+            formControlName="isRemainder"
+            [disabled]="isViewMode"
+          />
+          <span class="slider"></span>
+          <span class="switch-label">Notify me about this task</span>
+        </label>
+      </div>
+
+      <div class="field">
+        <label>Sub-tasks</label>
+        <label class="switch">
+          <input
+            type="checkbox"
             (change)="isVisbleSubtask($event)"
             [checked]="isVisiblesub_taskflag"
-            [ngClass]="{ 'disabled-input': isViewMode }"
+            [disabled]="isViewMode"
           />
-          <label class="form-check-label" for="isSubTask">
-            Do you want to add a sub-task?
-          </label>
-        </div>
+          <span class="slider"></span>
+          <span class="switch-label">Break this task into smaller items</span>
+        </label>
       </div>
-    </div>
 
-    <div *ngIf="isVisiblesub_taskflag">
-      <div class="mt-4">
-        <div class="d-flex justify-content-end">
+      <div class="field span-2" *ngIf="isVisiblesub_taskflag">
+        <div class="subtasks-header">
+          <label>Sub-task list</label>
           <button
             type="button"
-            *ngIf="!isViewMode"
-            class="btn btn-outline-dark btn-custom"
-            style="padding: 0.5rem 1rem; font-size: 1rem"
+            class="ghost-btn small"
             (click)="addRow()"
+            *ngIf="!isViewMode"
           >
-            <i class="fa-solid fa-shuffle"></i>
-            Add Subtask
+            <i class="fa-solid fa-plus"></i> Add row
           </button>
         </div>
-      </div>
-
-      <div style="margin-top: 1rem" formArrayName="subtasks">
-        <div
-          *ngFor="let subtask of subtasks.controls; let i = index"
-          [formGroupName]="i"
-          class="row1-sub-container"
-        >
+        <div formArrayName="subtasks" class="subtasks">
           <div
-            style="
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              margin-top: 1.5rem;
-            "
+            *ngFor="let subtask of subtasks.controls; let i = index"
+            [formGroupName]="i"
+            class="subtask-row"
           >
             <input
               type="text"
-              id="subtask"
-              class="form-control"
-              autocomplete="off"
               formControlName="subtask"
-              placeholder="Enter subtask"
-              [ngClass]="{ 'disabled-input': isViewMode }"
+              placeholder="Sub-task description"
+              autocomplete="off"
+              [class.disabled-input]="isViewMode"
             />
             <button
               type="button"
-              class="btn btn-outline-danger"
+              class="icon-btn delete"
               (click)="removeSubtask(i)"
               *ngIf="!isViewMode"
-              style="margin-left: 0.5rem"
+              aria-label="Remove sub-task"
             >
-              <i class="fa-regular fa-square-minus"></i>
+              <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
+          <p class="muted" *ngIf="subtasks.controls.length === 0">
+            No sub-tasks yet — click "Add row" to start.
+          </p>
         </div>
       </div>
     </div>
 
-    <!-- Buttons -->
-    <div class="d-flex justify-content-between mt-4">
-      <button
-        type="submit"
-        class="btn btn-primary btn-custom"
-        *ngIf="!isViewMode"
-      >
-        Submit
+    <div class="actions">
+      <button type="submit" class="primary-btn" *ngIf="!isViewMode">
+        <i class="fa-solid fa-floppy-disk"></i>
+        <span>{{ taskId ? 'Save changes' : 'Create task' }}</span>
       </button>
       <button
         type="button"
-        class="btn btn-secondary btn-custom"
+        class="ghost-btn"
         (click)="onReset()"
         *ngIf="!isViewMode"
       >
-        Reset
+        <i class="fa-solid fa-rotate-left"></i> Reset
       </button>
-      <button
-        type="button"
-        class="btn btn-danger btn-custom"
-        (click)="onCancel()"
-      >
-        Cancel
+      <button type="button" class="cancel-btn" (click)="onCancel()">
+        <i class="fa-solid fa-xmark"></i> Cancel
       </button>
     </div>
   </form>

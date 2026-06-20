@@ -1,0 +1,245 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">Administration</span>
+      <h1>Admin console</h1>
+      <p class="lede">Manage users, review data and reset the demo store.</p>
+    </div>
+    <button class="danger-btn" (click)="openResetPicker()">
+      <i class="fa-solid fa-rotate-left"></i> Reset data…
+    </button>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi">
+      <span class="kpi-label">Users</span>
+      <span class="kpi-value">{{ activeUsers }}</span>
+      <span class="kpi-sub"><i class="fa-solid fa-users"></i> Including admins</span>
+    </div>
+    <div class="kpi">
+      <span class="kpi-label">Tasks</span>
+      <span class="kpi-value">{{ tasks.length }}</span>
+      <span class="kpi-sub"><i class="fa-solid fa-list-check"></i> All tasks (incl. deleted)</span>
+    </div>
+    <div class="kpi">
+      <span class="kpi-label">Investments</span>
+      <span class="kpi-value">{{ investments.length }}</span>
+      <span class="kpi-sub"><i class="fa-solid fa-chart-pie"></i> All positions</span>
+    </div>
+    <div class="kpi">
+      <span class="kpi-label">Portfolio Value</span>
+      <span class="kpi-value">₹{{ totalCurrent | number:'1.0-0' }}</span>
+      <span class="kpi-sub">
+        <i class="fa-solid fa-coins"></i>
+        Invested ₹{{ totalInvested | number:'1.0-0' }}
+      </span>
+    </div>
+  </div>
+
+  <div class="users-card">
+    <div class="card-header">
+      <div>
+        <h2>User directory</h2>
+        <p>Promote, demote or remove user accounts.</p>
+      </div>
+      <div class="search-input">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" [(ngModel)]="searchUser" placeholder="Search users..." />
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Role</th>
+            <th>Tasks</th>
+            <th>Investments</th>
+            <th>Joined</th>
+            <th class="actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let u of filteredUsers">
+            <td>
+              <div class="user-cell">
+                <span class="avatar">{{ u.userName.substring(0, 2).toUpperCase() }}</span>
+                <span class="name">{{ u.userName }}</span>
+              </div>
+            </td>
+            <td>{{ u.userEmail }}</td>
+            <td>{{ u.phone }}</td>
+            <td>
+              <span class="role-pill" [class.admin]="u.role === 'admin'">{{ u.role }}</span>
+            </td>
+            <td>{{ taskCountFor(u.id) }}</td>
+            <td>
+              {{ investmentCountFor(u.id) }}
+              <small class="muted">(₹{{ invSumFor(u.id) | number:'1.0-0' }})</small>
+            </td>
+            <td>{{ u.createdAt | date:'mediumDate' }}</td>
+            <td class="actions">
+              <button class="row-btn" (click)="promote(u)">
+                <i class="fa-solid" [ngClass]="u.role === 'admin' ? 'fa-arrow-down' : 'fa-arrow-up'"></i>
+                <span>{{ u.role === 'admin' ? 'Demote' : 'Promote' }}</span>
+              </button>
+              <button
+                class="row-btn danger"
+                (click)="removeUser(u)"
+                [disabled]="u.role === 'admin'"
+              >
+                <i class="fa-solid fa-trash"></i>
+                <span>Remove</span>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="filteredUsers.length === 0">
+            <td colspan="8" class="empty">No users match your search.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Reset picker modal — choose scope before invoking the destructive flow -->
+<div
+  class="reset-picker"
+  *ngIf="resetPickerOpen"
+  (click)="closeResetPicker()"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="reset-picker-title"
+>
+  <div class="rp-panel" (click)="$event.stopPropagation()">
+    <!-- ---- View: scope choice ---- -->
+    <ng-container *ngIf="resetPickerView === 'choice'">
+      <header class="rp-head">
+        <span class="rp-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
+        <div>
+          <span class="rp-eyebrow">Danger zone</span>
+          <h2 id="reset-picker-title">Choose what to reset</h2>
+          <p>Pick a scope. Both options are permanent and cannot be undone.</p>
+        </div>
+        <button type="button" class="icon-btn" (click)="closeResetPicker()" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </header>
+
+      <div class="rp-options">
+        <button type="button" class="rp-option" (click)="showUserPicker()">
+          <span class="rp-opt-icon" data-tone="warning"><i class="fa-solid fa-broom"></i></span>
+          <div class="rp-opt-text">
+            <strong>Wipe a user's data</strong>
+            <span>
+              Pick a user and clear their tasks, investments, notes, and goals.
+              The account stays so they can log back in. Use the row Remove button
+              to delete the account itself.
+            </span>
+            <span class="rp-meta">
+              <span><i class="fa-solid fa-users"></i> {{ users.length }} users</span>
+              <span><i class="fa-solid fa-database"></i> {{ tasks.length + investments.length }} owned items</span>
+            </span>
+          </div>
+          <i class="fa-solid fa-chevron-right rp-arrow"></i>
+        </button>
+
+        <button type="button" class="rp-option danger" (click)="resetEverything()">
+          <span class="rp-opt-icon" data-tone="danger"><i class="fa-solid fa-arrows-rotate"></i></span>
+          <div class="rp-opt-text">
+            <strong>Reset everything</strong>
+            <span>
+              Wipes every user, task, investment, note, and goal in this browser
+              and restores the seed state. Your session will be ended.
+            </span>
+            <span class="rp-meta">
+              <span><i class="fa-solid fa-users"></i> {{ activeUsers }} users</span>
+              <span><i class="fa-solid fa-clipboard-check"></i> {{ tasks.length }} tasks</span>
+              <span><i class="fa-solid fa-chart-line"></i> {{ investments.length }} investments</span>
+            </span>
+          </div>
+          <i class="fa-solid fa-chevron-right rp-arrow"></i>
+        </button>
+      </div>
+
+      <footer class="rp-foot">
+        <button type="button" class="ghost-btn" (click)="closeResetPicker()">Cancel</button>
+      </footer>
+    </ng-container>
+
+    <!-- ---- View: pick a user ---- -->
+    <ng-container *ngIf="resetPickerView === 'pick-user'">
+      <header class="rp-head">
+        <button type="button" class="icon-btn rp-back" (click)="backToChoice()" aria-label="Back">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <div>
+          <span class="rp-eyebrow">Wipe user data</span>
+          <h2>Pick a user</h2>
+          <p>Their tasks, investments, notes, and goals will be cleared. Login credentials stay intact.</p>
+        </div>
+        <button type="button" class="icon-btn" (click)="closeResetPicker()" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </header>
+
+      <div class="rp-search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input
+          type="text"
+          [(ngModel)]="resetPickerSearch"
+          placeholder="Search by name or email..."
+          autofocus
+        />
+      </div>
+
+      <div class="rp-user-list">
+        <button
+          *ngFor="let u of pickerUsers"
+          type="button"
+          class="rp-user-row"
+          (click)="wipeDataFor(u)"
+          [disabled]="totalDataFor(u.id) === 0"
+        >
+          <span class="rp-avatar">{{ u.userName.substring(0, 2).toUpperCase() }}</span>
+          <div class="rp-user-text">
+            <div class="rp-user-top">
+              <strong>{{ u.userName }}</strong>
+              <span class="rp-role" [class.admin]="u.role === 'admin'">{{ u.role }}</span>
+            </div>
+            <span class="rp-user-email">{{ u.userEmail }}</span>
+            <span class="rp-meta">
+              <span><i class="fa-solid fa-clipboard-check"></i> {{ statsFor(u.id).tasks }}</span>
+              <span><i class="fa-solid fa-chart-line"></i> {{ statsFor(u.id).investments }}</span>
+              <span><i class="fa-solid fa-note-sticky"></i> {{ statsFor(u.id).notes }}</span>
+              <span><i class="fa-solid fa-flag-checkered"></i> {{ statsFor(u.id).goals }}</span>
+            </span>
+          </div>
+          <span class="rp-total" *ngIf="totalDataFor(u.id) > 0">
+            <strong>{{ totalDataFor(u.id) }}</strong>
+            <span>items</span>
+          </span>
+          <span class="rp-total empty" *ngIf="totalDataFor(u.id) === 0">
+            <span>No data</span>
+          </span>
+          <i class="fa-solid fa-chevron-right rp-arrow"></i>
+        </button>
+
+        <div class="rp-empty" *ngIf="pickerUsers.length === 0">
+          <i class="fa-solid fa-user-slash"></i>
+          <p>No users match that search.</p>
+        </div>
+      </div>
+
+      <footer class="rp-foot">
+        <button type="button" class="ghost-btn" (click)="backToChoice()">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Back</span>
+        </button>
+      </footer>
+    </ng-container>
+  </div>
+</div>
