@@ -1042,7 +1042,47 @@
   }
 }
 
-/* ========== Mobile ========== */
+/* ========== Mobile / tablet ==========
+   Phone GPUs choke on stacked drop-shadows + blur filters + multiple
+   simultaneous SVG path animations. On small screens we drastically
+   simplify the FAB orb and the panel header avatar so the app stays
+   responsive. */
+@media (max-width: 991.98px) {
+  /* Disable the most expensive SVG animations app-wide on tablet/phone.
+     The orb still looks alive thanks to the FAB-level pulse + ring rings. */
+  .fab .ai-orb .orb-filaments,
+  .panel-head .ai-orb .orb-filaments,
+  .fab .ai-orb .orb-swirl,
+  .panel-head .ai-orb .orb-swirl,
+  .fab .ai-orb .orb-hotspot,
+  .panel-head .ai-orb .orb-hotspot,
+  .fab .ai-orb .orb-halo,
+  .panel-head .ai-orb .orb-halo {
+    display: none !important;
+  }
+
+  /* Collapse the multiple drop-shadows on the orb shine to a single layer. */
+  .fab .ai-orb .orb-shine,
+  .panel-head .ai-orb .orb-shine {
+    filter: none !important;
+    animation: none !important;
+  }
+
+  /* Single ring instead of two; slower so it doesn't redraw per frame.
+     The remaining ring is enough to sell "alive" without the GPU cost. */
+  .fab .ring-2 { display: none !important; }
+  .fab .ring-1 {
+    animation-duration: 3.4s;
+  }
+
+  /* Stop the rotating conic gradients on the FAB and panel borders —
+     they cause continuous repaints. */
+  .fab::before,
+  .panel::before {
+    animation: none !important;
+  }
+}
+
 @media (max-width: 575.98px) {
   .panel {
     right: 12px;

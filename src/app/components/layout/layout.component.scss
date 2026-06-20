@@ -740,7 +740,6 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(2px);
   z-index: 1015;
 }
 
@@ -752,15 +751,39 @@
   /* Mobile collapse handle is hidden — drawer is the only mode here */
   .collapse-btn { display: none; }
 
-  /* Lighter plasma on small screens — keeps content readable */
-  .plasma-bg .plasma-orb { filter: blur(60px); }
-  .plasma-bg .plasma-1 { width: 380px; height: 380px; }
-  .plasma-bg .plasma-2 { width: 320px; height: 320px; }
-  .plasma-bg .plasma-3 { width: 240px; height: 240px; }
-  .plasma-bg .plasma-ribbons { opacity: 0.55; }
-  .plasma-bg .plasma-shimmer { opacity: 0.5; }
-  .plasma-bg .star { display: none; }
-  .plasma-bg .s1, .plasma-bg .s4, .plasma-bg .s7, .plasma-bg .s9 { display: block; }
+  /* === Mobile perf: kill the GPU-expensive paint work ===
+     blur filters, conic gradients, SVG feGaussianBlur, and continuous
+     animations all hammer phone GPUs. We replace them with cheap static
+     fills so scroll and tap stay smooth. */
+  .plasma-bg .plasma-shimmer,
+  .plasma-bg .plasma-ribbons,
+  .plasma-bg .star {
+    display: none !important;
+  }
+  .plasma-bg .plasma-orb {
+    filter: none;
+    animation: none !important;
+    will-change: auto;
+    opacity: 0.18;
+  }
+  .plasma-bg .plasma-1 {
+    width: 60vw;
+    height: 60vw;
+    max-width: 360px;
+    max-height: 360px;
+    top: -10vw;
+    right: -10vw;
+  }
+  .plasma-bg .plasma-2 {
+    width: 50vw;
+    height: 50vw;
+    max-width: 280px;
+    max-height: 280px;
+    bottom: -10vw;
+    left: 0;
+  }
+  .plasma-bg .plasma-3 { display: none; }
+  .plasma-bg .plasma-grid { opacity: 0.08; }
 
   .sidebar {
     position: fixed;
@@ -769,8 +792,11 @@
     height: 100vh;
     width: var(--sb-w);
     transform: translateX(-110%);
-    transition: transform 0.25s ease;
+    transition: transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.05);
     overflow-x: hidden;
+    /* Hint the compositor so the drawer slide stays on the GPU. */
+    will-change: transform;
+    contain: layout paint;
   }
 
   .app-shell.mobile-open .sidebar { transform: translateX(0); }
@@ -883,11 +909,10 @@
     }
   }
 
-  /* Mobile topbar — thin frosted bar, not flat white */
+  /* Mobile topbar — solid bar (no backdrop-filter; that operation is
+     one of the most expensive on phone GPUs and visibly stutters scroll). */
   .mobile-topbar {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(10px) saturate(140%);
-    -webkit-backdrop-filter: blur(10px) saturate(140%);
+    background: var(--surface);
     border-bottom: 1px solid var(--border);
     box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
   }
