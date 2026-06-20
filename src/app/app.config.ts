@@ -12,16 +12,23 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { provideToastr } from 'ngx-toastr';
 import { StorageService } from './services/storage/storage.service';
 import { AuthService } from './services/auth/auth.service';
+import { IdleTimeoutService } from './services/auth/idle-timeout.service';
 
 /**
- * Boot order: warm encrypted storage cache, then validate any persisted token.
- * Both are awaited before the router activates routes so guards see a stable
- * isLoggedIn() answer immediately.
+ * Boot order:
+ *   1. (legacy) StorageService.init — now a no-op shim
+ *   2. AuthService.init — re-validate any stored token against /auth/me
+ *   3. IdleTimeoutService.start — arm idle auto-logout
  */
-function initSecurity(storage: StorageService, auth: AuthService) {
+function initSecurity(
+  storage: StorageService,
+  auth: AuthService,
+  idle: IdleTimeoutService
+) {
   return async () => {
     await storage.init();
     await auth.init();
+    idle.start();
   };
 }
 
@@ -35,7 +42,7 @@ export const appConfig: ApplicationConfig = {
     {
       provide: APP_INITIALIZER,
       multi: true,
-      deps: [StorageService, AuthService],
+      deps: [StorageService, AuthService, IdleTimeoutService],
       useFactory: initSecurity,
     },
   ],

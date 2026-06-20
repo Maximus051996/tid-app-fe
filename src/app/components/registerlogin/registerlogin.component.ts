@@ -45,11 +45,19 @@ export class RegisterloginComponent implements OnDestroy {
         '',
         [Validators.required, Validators.pattern('^[0-9]{10}$')],
       ],
-      registeruserPassword: ['', [Validators.required, Validators.minLength(6)]],
+      registeruserPassword: [
+        '',
+        [
+          Validators.required,
+          Validators.minLength(8),
+          Validators.maxLength(128),
+          Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/),
+        ],
+      ],
     });
     this.loginForm = this.formBuilder.group({
       userName: ['', [Validators.required]],
-      loginuserPassword: ['', [Validators.required, Validators.minLength(6)]],
+      loginuserPassword: ['', [Validators.required, Validators.minLength(8)]],
     });
   }
 

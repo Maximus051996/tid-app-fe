@@ -105,6 +105,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'backup',
+        loadComponent: () =>
+          import('./components/backup/backup.component').then(
+            (m) => m.BackupComponent
+          ),
+      },
+      {
         path: 'admin',
         loadComponent: () =>
           import('./components/admin/admin.component').then(

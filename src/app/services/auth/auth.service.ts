@@ -1,66 +1,81 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
-import { Subject } from 'rxjs';
+import { firstValueFrom, Subject } from 'rxjs';
 import { AuthSession, Role, User } from '../../models/models';
-import { StorageService } from '../storage/storage.service';
 import { LoaderService } from '../loader/loader.service';
-import { pasetoDecrypt, pasetoEncrypt } from '../security/paseto';
-import { SecretStoreService } from '../security/secret-store';
-import { hashPassword, verifyPassword } from '../security/password';
-import { LoginThrottleService } from '../security/login-throttle';
-import { pbkdf2 } from '../security/crypto-utils';
+import { ApiService } from '../api/api.service';
 
-const TOKEN_KEY = 'tid.token.v2';
-const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes
-const TOKEN_FOOTER = 'tid';
-const TOKEN_IMPLICIT = 'tid.app.v1';
+const TOKEN_KEY = 'tid.token.v3'; // bumped from v2 (PASETO local-only) to v3 (HS256 JWT from API)
+
+interface LoginResponse {
+  token: string;
+  user: User;
+  message: string;
+}
+
+interface MeResponse {
+  user: User;
+}
 
 /**
- * Frontend-only auth: registration, login, logout, role/ownership checks.
+ * Frontend auth bridge to the backend.
  *
- * Tokens are PASETO v3.local — symmetric authenticated encryption. The
- * device key lives in localStorage (see SecretStoreService) so anyone with
- * full device access can still mint tokens; what we DO get is:
- *   - tamper detection (modifying ciphertext invalidates the auth tag)
- *   - confidentiality at rest (no plaintext claims in localStorage)
- *   - cross-device portability blocked (a token copied without the key is useless)
+ * The server issues a 30-min HS256 JWT on login. This service caches the
+ * raw token + the decoded session in memory, persists the raw token in
+ * localStorage so refreshes don't kick the user out, and exposes a
+ * synchronous read API the rest of the app already depends on.
  *
- * Passwords are PBKDF2-SHA-256 (200k iterations, per-user salt). Login
- * attempts are throttled with exponential backoff per identifier.
+ * The backend is the only thing that can mint or invalidate a token —
+ * the client never tries to "verify" anything itself; it just trusts
+ * what the server stamped.
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private cachedToken: string | null = null;
+  private cachedSession: AuthSession | null = null;
   private logoutTimer: ReturnType<typeof setTimeout> | null = null;
   private logoutNavTimer: ReturnType<typeof setTimeout> | null = null;
 
-  /** Cached session decrypted on demand to avoid awaiting on every call. */
-  private cachedSession: AuthSession | null = null;
-  private cachedToken: string | null = null;
-
-  /** Emits whenever the user logs out. Long-lived services subscribe to clean themselves up. */
+  /** Long-lived services subscribe so they can tear themselves down on logout. */
   private readonly loggedOutSubject = new Subject<void>();
   readonly loggedOut$ = this.loggedOutSubject.asObservable();
 
   constructor(
     private router: Router,
-    private storage: StorageService,
     private loader: LoaderService,
-    private secrets: SecretStoreService,
-    private throttle: LoginThrottleService
+    private api: ApiService
   ) {}
 
-  /** Awaited from APP_INITIALIZER so the rest of the app can call sync session helpers. */
+  /** Awaited from APP_INITIALIZER. Re-validates a cached token against the server. */
   async init(): Promise<void> {
     const raw = localStorage.getItem(TOKEN_KEY);
     if (!raw) return;
-    const session = await this.tryDecryptToken(raw);
-    if (!session || session.expiresAt < Date.now()) {
+
+    const decoded = this.decodeJwt(raw);
+    if (!decoded) {
       localStorage.removeItem(TOKEN_KEY);
       return;
     }
+
+    // Cache before /me so the interceptor attaches the token.
     this.cachedToken = raw;
-    this.cachedSession = session;
-    this.scheduleAutoLogout(session.expiresAt);
+    this.cachedSession = decoded;
+
+    try {
+      // Confirm with the server that the token is still valid (account not deleted, etc.)
+      const res = await firstValueFrom(this.api.get<MeResponse>('/auth/me'));
+      // Refresh role/userName from the server in case admin changed them.
+      this.cachedSession = {
+        ...decoded,
+        userId: res.user.id,
+        userName: res.user.userName,
+        role: res.user.role,
+      };
+      this.scheduleAutoLogout(decoded.expiresAt);
+    } catch {
+      // Either the token expired or the server rejected it — clear and continue.
+      this.clearSession();
+    }
   }
 
   // ---------- Token helpers ----------
@@ -74,9 +89,9 @@ export class AuthService {
     return this.cachedToken;
   }
 
-  /** Backwards-compat: components call this after login. We've already cached, so this is a no-op. */
+  /** Components used to call this after login. The login() method now caches directly,
+   *  so this only needs to schedule auto-logout. Kept for source compatibility. */
   setJwtToken(_token: string): void {
-    // Token already persisted by login(). Re-running scheduleAutoLogout is safe.
     if (this.cachedSession) this.scheduleAutoLogout(this.cachedSession.expiresAt);
   }
 
@@ -95,12 +110,147 @@ export class AuthService {
       this.hideSpinner();
       this.loader.forceHide();
       this.logoutNavTimer = null;
-    }, 600);
+    }, 400);
   }
 
-  /** Kept for backward compatibility — auto-logout is now handled internally. */
+  /** Backwards-compat — auto-logout is handled internally now. */
   autologOut(): void {
     if (this.cachedSession) this.scheduleAutoLogout(this.cachedSession.expiresAt);
+  }
+
+  showSpinner() { return this.loader.show(); }
+  hideSpinner() { return this.loader.hide(); }
+
+  // ---------- Session info ----------
+
+  getSession(): AuthSession | null {
+    if (!this.cachedSession) return null;
+    if (this.cachedSession.expiresAt < Date.now()) {
+      this.clearSession();
+      return null;
+    }
+    return this.cachedSession;
+  }
+
+  getUserId(): string | null {
+    return this.getSession()?.userId ?? null;
+  }
+  getUserName(): string | null {
+    return this.getSession()?.userName ?? null;
+  }
+  getRole(): Role | null {
+    return this.getSession()?.role ?? null;
+  }
+  isAdmin(): boolean {
+    return this.getRole() === 'admin';
+  }
+  isLoggedIn(): boolean {
+    return this.getJwtToken() !== null;
+  }
+
+  // ---------- Auth actions ----------
+
+  /** Hits POST /api/auth/register. Returns the new user (no auto-login). */
+  async register(input: {
+    userName?: string;
+    userEmail: string;
+    phone: string;
+    userPassword: string;
+  }): Promise<User> {
+    const res = await firstValueFrom(
+      this.api.post<{ user: User; message: string }>('/auth/register', input)
+    );
+    return res.user;
+  }
+
+  /** Hits POST /api/auth/login. Returns the issued token. */
+  async login(identifier: string, password: string): Promise<string> {
+    const res = await firstValueFrom(
+      this.api.post<LoginResponse>('/auth/login', {
+        userName: identifier,
+        userPassword: password,
+      })
+    );
+
+    const decoded = this.decodeJwt(res.token);
+    if (!decoded) throw new Error('Server returned an unreadable token.');
+
+    // Refresh user fields from the response payload (more authoritative than the JWT body).
+    const session: AuthSession = {
+      userId: res.user.id,
+      userName: res.user.userName,
+      role: res.user.role,
+      issuedAt: decoded.issuedAt,
+      expiresAt: decoded.expiresAt,
+    };
+
+    localStorage.setItem(TOKEN_KEY, res.token);
+    this.cachedToken = res.token;
+    this.cachedSession = session;
+    this.scheduleAutoLogout(session.expiresAt);
+    return res.token;
+  }
+
+  /** Change the current user's password. Server bumps tokenVersion → re-login required. */
+  async changePassword(currentPassword: string, newPassword: string): Promise<string> {
+    const res = await firstValueFrom(
+      this.api.post<{ message: string }>('/auth/change-password', {
+        currentPassword,
+        newPassword,
+      })
+    );
+    // Invalidate locally too — the server already revoked our token.
+    this.removeJwtToken();
+    return res.message;
+  }
+
+  /** Revoke every session this user has anywhere. */
+  async logoutEverywhere(): Promise<string> {
+    const res = await firstValueFrom(
+      this.api.post<{ message: string }>('/auth/logout-everywhere', {})
+    );
+    this.removeJwtToken();
+    return res.message;
+  }
+
+  // ---------- Internals ----------
+
+  /** Lightweight, non-verifying decode so we know when to log the user out. */
+  private decodeJwt(token: string): AuthSession | null {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+      const payload = JSON.parse(this.b64urlToString(parts[1]));
+      const exp = typeof payload.exp === 'number' ? payload.exp * 1000 : 0;
+      const iat = typeof payload.iat === 'number' ? payload.iat * 1000 : Date.now();
+      if (!exp || exp < Date.now()) return null;
+      return {
+        userId: String(payload.sub ?? ''),
+        userName: String(payload.userName ?? ''),
+        role: payload.role === 'admin' ? 'admin' : 'user',
+        issuedAt: iat,
+        expiresAt: exp,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  private b64urlToString(s: string): string {
+    let str = s.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = (4 - (str.length % 4)) % 4;
+    str += '='.repeat(pad);
+    return decodeURIComponent(
+      atob(str)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+  }
+
+  /** Legacy alias kept so older parseJwt callsites compile. */
+  parseJwt(token: string): AuthSession | null {
+    return this.decodeJwt(token);
   }
 
   private clearSession(): void {
@@ -117,161 +267,5 @@ export class AuthService {
       return;
     }
     this.logoutTimer = setTimeout(() => this.removeJwtToken(), remaining);
-  }
-
-  showSpinner() {
-    return this.loader.show();
-  }
-  hideSpinner() {
-    return this.loader.hide();
-  }
-
-  // ---------- Session info ----------
-
-  getSession(): AuthSession | null {
-    if (!this.cachedSession) return null;
-    if (this.cachedSession.expiresAt < Date.now()) {
-      this.clearSession();
-      return null;
-    }
-    return this.cachedSession;
-  }
-
-  getUserId(): string | null {
-    return this.getSession()?.userId ?? null;
-  }
-
-  getUserName(): string | null {
-    return this.getSession()?.userName ?? null;
-  }
-
-  getRole(): Role | null {
-    return this.getSession()?.role ?? null;
-  }
-
-  isAdmin(): boolean {
-    return this.getRole() === 'admin';
-  }
-
-  isLoggedIn(): boolean {
-    return this.getJwtToken() !== null;
-  }
-
-  // ---------- Auth actions ----------
-
-  /** Register a new user. Throws if userName or email already exists. */
-  async register(input: {
-    userName: string;
-    userEmail: string;
-    phone: string;
-    userPassword: string;
-  }): Promise<User> {
-    const users = this.storage.getUsers();
-    const userName = input.userName.trim().toLowerCase();
-    const userEmail = input.userEmail.trim().toLowerCase();
-
-    if (users.some((u) => u.userName.toLowerCase() === userName)) {
-      throw new Error('Username already exists');
-    }
-    if (users.some((u) => u.userEmail.toLowerCase() === userEmail)) {
-      throw new Error('Email is already registered');
-    }
-    if (!this.isPasswordStrong(input.userPassword)) {
-      throw new Error(
-        'Password must be at least 8 characters with letters and numbers.'
-      );
-    }
-
-    const newUser: User = {
-      id: 'u-' + Date.now().toString(36),
-      userName,
-      userEmail,
-      phone: input.phone.trim(),
-      userPassword: await hashPassword(input.userPassword),
-      role: 'user',
-      createdAt: new Date().toISOString(),
-    };
-    users.push(newUser);
-    this.storage.saveUsers(users);
-    return newUser;
-  }
-
-  /** Login by username (or email) + password. Returns the issued PASETO token. */
-  async login(identifier: string, password: string): Promise<string> {
-    const id = identifier.trim().toLowerCase();
-
-    const remaining = this.throttle.remainingLockoutMs(id);
-    if (remaining > 0) {
-      const seconds = Math.ceil(remaining / 1000);
-      throw new Error(
-        `Too many failed attempts. Try again in ${seconds} second${seconds === 1 ? '' : 's'}.`
-      );
-    }
-
-    const users = this.storage.getUsers();
-    const user = users.find(
-      (u) => u.userName.toLowerCase() === id || u.userEmail.toLowerCase() === id
-    );
-    if (!user) {
-      // Run a real PBKDF2 of similar cost to keep response timing flat
-      // regardless of whether the username exists.
-      await pbkdf2(password, new Uint8Array(16), 200_000, 32);
-      this.throttle.recordFailure(id);
-      throw new Error('Invalid username or password.');
-    }
-
-    const ok = await verifyPassword(password, user.userPassword);
-    if (!ok) {
-      this.throttle.recordFailure(id);
-      throw new Error('Invalid username or password.');
-    }
-
-    this.throttle.recordSuccess(id);
-
-    const session: AuthSession = {
-      userId: user.id,
-      userName: user.userName,
-      role: user.role,
-      issuedAt: Date.now(),
-      expiresAt: Date.now() + SESSION_TTL_MS,
-    };
-
-    const token = await pasetoEncrypt(session, this.secrets.getDeviceKey(), {
-      footer: TOKEN_FOOTER,
-      implicit: TOKEN_IMPLICIT,
-    });
-    localStorage.setItem(TOKEN_KEY, token);
-    this.cachedToken = token;
-    this.cachedSession = session;
-    this.scheduleAutoLogout(session.expiresAt);
-    return token;
-  }
-
-  // ---------- PASETO helpers ----------
-
-  /** Used by interceptors / boot init. Returns null on tamper or expiry. */
-  async parseToken(token: string): Promise<AuthSession | null> {
-    return this.tryDecryptToken(token);
-  }
-
-  /** Legacy alias kept so the older `parseJwt` callsites compile. */
-  parseJwt(_token: string): AuthSession | null {
-    return this.cachedSession;
-  }
-
-  private async tryDecryptToken(token: string): Promise<AuthSession | null> {
-    try {
-      return await pasetoDecrypt<AuthSession>(token, this.secrets.getDeviceKey(), {
-        footer: TOKEN_FOOTER,
-        implicit: TOKEN_IMPLICIT,
-      });
-    } catch {
-      return null;
-    }
-  }
-
-  private isPasswordStrong(p: string): boolean {
-    if (p.length < 8) return false;
-    return /[A-Za-z]/.test(p) && /\d/.test(p);
   }
 }

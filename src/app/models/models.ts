@@ -5,8 +5,10 @@ export interface User {
   userName: string;
   userEmail: string;
   phone: string;
-  /** Stored only in this frontend-only demo. Never do this in real apps. */
-  userPassword: string;
+  /** Plaintext is never stored in the model anymore — passwords live as
+   *  bcrypt hashes server-side. Kept optional for backward compat with
+   *  legacy code paths and the seed data file. */
+  userPassword?: string;
   role: Role;
   createdAt: string;
 }

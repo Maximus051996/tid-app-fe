@@ -1,19 +1,17 @@
 import { Injectable } from '@angular/core';
-import { defer, Observable, from } from 'rxjs';
+import { from, Observable } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
-import { StorageService } from '../storage/storage.service';
+import { ApiService } from '../api/api.service';
 import { User } from '../../models/models';
 
 /**
- * Thin wrapper that exposes register/login as Observables so the existing
- * components don't have to change their subscription patterns.
+ * Observable wrappers around the auth + admin user endpoints. Components
+ * already subscribe to these shapes; we keep them stable and let the
+ * underlying calls hit the API.
  */
 @Injectable({ providedIn: 'root' })
 export class UserService {
-  constructor(
-    private auth: AuthService,
-    private storage: StorageService
-  ) {}
+  constructor(private auth: AuthService, private api: ApiService) {}
 
   registeruser(payload: {
     userName: string;
@@ -22,13 +20,10 @@ export class UserService {
     userPassword: string;
   }): Observable<{ message: string; user: Omit<User, 'userPassword'> }> {
     return from(
-      this.auth.register(payload).then((user) => {
-        const { userPassword, ...safe } = user;
-        return {
-          message: 'Registration successful. Please log in.',
-          user: safe,
-        };
-      })
+      this.auth.register(payload).then((user) => ({
+        message: 'Registration successful. Please log in.',
+        user: user as Omit<User, 'userPassword'>,
+      }))
     );
   }
 
@@ -43,12 +38,28 @@ export class UserService {
     );
   }
 
-  /** Admin-only: list every user (without password). */
+  /** Admin-only — full directory. */
   getAllUsers(): Observable<Omit<User, 'userPassword'>[]> {
-    return defer(() =>
-      Promise.resolve(
-        this.storage.getUsers().map(({ userPassword, ...rest }) => rest)
-      )
+    return this.api.get<Omit<User, 'userPassword'>[]>('/users');
+  }
+
+  /** Admin-only — toggle role. */
+  setRole(id: string, role: 'admin' | 'user'): Observable<{ user: Omit<User, 'userPassword'> }> {
+    return this.api.patch<{ user: Omit<User, 'userPassword'> }>(`/users/${id}/role`, { role });
+  }
+
+  /** Admin-only — wipe a user's data without deleting the account. */
+  wipeUserData(
+    id: string
+  ): Observable<{ message: string; counts: Record<string, number> }> {
+    return this.api.post<{ message: string; counts: Record<string, number> }>(
+      `/users/${id}/wipe-data`,
+      {}
     );
+  }
+
+  /** Admin-only — delete a user and cascade-remove their data. */
+  removeUser(id: string): Observable<{ message: string }> {
+    return this.api.delete<{ message: string }>(`/users/${id}`);
   }
 }
