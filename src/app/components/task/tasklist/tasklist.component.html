@@ -101,9 +101,9 @@
       </button>
     </div>
 
-    <div class="day-detail" *ngIf="tasksForSelectedDay().length > 0; else noDayTasks">
+    <div class="day-detail" *ngIf="selectedDayTasks.length > 0; else noDayTasks">
       <ul>
-        <li *ngFor="let t of tasksForSelectedDay()" class="day-row">
+        <li *ngFor="let t of selectedDayTasks" class="day-row">
           <span class="dot" [ngClass]="priorityClass(t.priority)"></span>
           <span class="row-title">{{ t.subject }}</span>
           <span class="row-status status-{{ statusKey(t) }}">
@@ -228,6 +228,7 @@
             type="text"
             placeholder="Search tasks..."
             [(ngModel)]="searchText"
+            (ngModelChange)="onSearchChange()"
           />
         </div>
         <div class="chips">

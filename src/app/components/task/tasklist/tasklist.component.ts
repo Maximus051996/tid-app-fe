@@ -1,9 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { NgxPaginationModule } from 'ngx-pagination';
-import { NgxSpinnerModule } from 'ngx-spinner';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -28,7 +33,6 @@ interface DayCell {
   selector: 'app-tasklist',
   standalone: true,
   imports: [
-    NgxSpinnerModule,
     CommonModule,
     NgxPaginationModule,
     FormsModule,
@@ -36,9 +40,13 @@ interface DayCell {
   ],
   templateUrl: './tasklist.component.html',
   styleUrl: './tasklist.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TasklistComponent implements OnInit, OnDestroy {
   items: Task[] = [];
+
+  // Precomputed filtered list — recomputed on data or filter change.
+  filteredItems: Task[] = [];
 
   // Priority KPIs (only count active, non-deleted)
   highCount = 0;
@@ -67,19 +75,22 @@ export class TasklistComponent implements OnInit, OnDestroy {
   upcomingTasks: Task[] = [];
   recentlyCompleted: Task[] = [];
 
+  // Selected day's tasks — recomputed alongside the week strip.
+  selectedDayTasks: Task[] = [];
+
   greeting = '';
   userName = '';
   todayLabel = '';
 
   private readonly destroy$ = new Subject<void>();
-  private spinnerTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private taskService: TaskService,
     private dataService: DataService,
     private router: Router,
     private authService: AuthService,
-    private confirmDialog: ConfirmDialogService
+    private confirmDialog: ConfirmDialogService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -97,7 +108,8 @@ export class TasklistComponent implements OnInit, OnDestroy {
   // ---------- Data ----------
 
   loadTasks(): void {
-    this.authService.showSpinner();
+    // TaskService is in-memory; resolve synchronously on the same tick.
+    // Skipping the spinner avoids the brief modal flash on the dashboard.
     this.taskService
       .getallTasks()
       .pipe(takeUntil(this.destroy$))
@@ -107,6 +119,8 @@ export class TasklistComponent implements OnInit, OnDestroy {
           this.computeStats();
           this.buildWeekStrip();
           this.buildActivityPanels();
+          this.rebuildFiltered();
+          this.recomputeSelectedDay();
 
           // open-task count for the side nav badge
           const open = res.filter(
@@ -114,21 +128,13 @@ export class TasklistComponent implements OnInit, OnDestroy {
           ).length;
           this.dataService.changeData(open);
 
-          if (this.spinnerTimer) clearTimeout(this.spinnerTimer);
-          this.spinnerTimer = setTimeout(() => {
-            this.authService.hideSpinner();
-            this.spinnerTimer = null;
-          }, 200);
+          this.cdr.markForCheck();
         },
-        error: (err: Error) => {
-          this.dataService.showerrorToaster(err.message);
-          this.authService.hideSpinner();
-        },
+        error: (err: Error) => this.dataService.showerrorToaster(err.message),
       });
   }
 
   ngOnDestroy(): void {
-    if (this.spinnerTimer) clearTimeout(this.spinnerTimer);
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -232,35 +238,42 @@ export class TasklistComponent implements OnInit, OnDestroy {
 
   // ---------- Filtering ----------
 
-  get filteredItems(): Task[] {
-    const now = new Date();
-    return this.items.filter((t) => {
-      const matchesText = t.subject
-        .toLowerCase()
-        .includes(this.searchText.toLowerCase());
-      let matchesStatus = true;
-      switch (this.statusFilter) {
-        case 'notStarted':
-          matchesStatus = t.taskStatus === 'notStarted';
-          break;
-        case 'partiallyCompleted':
-          matchesStatus = t.taskStatus === 'partiallyCompleted';
-          break;
-        case 'completed':
-          matchesStatus = t.taskStatus === 'completed';
-          break;
-        case 'overdue':
-          matchesStatus =
-            t.taskStatus !== 'completed' && new Date(t.endDate) < now;
-          break;
-      }
-      return matchesText && matchesStatus;
-    });
+  onSearchChange(): void {
+    this.rebuildFiltered();
+    this.cdr.markForCheck();
   }
 
   setFilter(filter: typeof this.statusFilter): void {
     this.statusFilter = filter;
     this.currentPage = 1;
+    this.rebuildFiltered();
+    this.cdr.markForCheck();
+  }
+
+  private rebuildFiltered(): void {
+    const q = this.searchText.trim().toLowerCase();
+    const filter = this.statusFilter;
+    const startToday = this.startOfDay(new Date());
+    const out: Task[] = [];
+    for (const t of this.items) {
+      if (q && !t.subject.toLowerCase().includes(q)) continue;
+      switch (filter) {
+        case 'notStarted':
+          if (t.taskStatus !== 'notStarted') continue;
+          break;
+        case 'partiallyCompleted':
+          if (t.taskStatus !== 'partiallyCompleted') continue;
+          break;
+        case 'completed':
+          if (t.taskStatus !== 'completed') continue;
+          break;
+        case 'overdue':
+          if (t.taskStatus === 'completed' || new Date(t.endDate) >= startToday) continue;
+          break;
+      }
+      out.push(t);
+    }
+    this.filteredItems = out;
   }
 
   // ---------- Navigation / actions ----------
@@ -289,7 +302,6 @@ export class TasklistComponent implements OnInit, OnDestroy {
       icon: 'fa-solid fa-trash',
     });
     if (!ok) return;
-    this.authService.showSpinner();
     this.taskService
       .deleteTask(id)
       .pipe(takeUntil(this.destroy$))
@@ -298,29 +310,35 @@ export class TasklistComponent implements OnInit, OnDestroy {
           if (res.message) this.loadTasks();
           this.dataService.showSuccessToasterMsg(res.message);
         },
-        error: (err: Error) => {
-          this.dataService.showerrorToaster(err.message);
-          this.authService.hideSpinner();
-        },
+        error: (err: Error) => this.dataService.showerrorToaster(err.message),
       });
   }
 
   selectDay(iso: string): void {
     this.selectedDayIso = iso;
     const cell = this.weekStrip.find((c) => c.iso === iso);
-    if (!cell) return;
-    if (cell.isToday) {
+    if (cell?.isToday) {
       this.statusFilter = 'all';
-      return;
+      this.rebuildFiltered();
     }
+    this.recomputeSelectedDay();
+    this.cdr.markForCheck();
   }
 
-  tasksForSelectedDay(): Task[] {
-    if (!this.selectedDayIso) return [];
-    return this.items
-      .filter((t) => !t.isDeleted)
-      .filter((t) => this.toIsoDate(new Date(t.endDate)) === this.selectedDayIso)
-      .sort((a, b) => this.priorityWeight(b.priority) - this.priorityWeight(a.priority));
+  private recomputeSelectedDay(): void {
+    if (!this.selectedDayIso) {
+      this.selectedDayTasks = [];
+      return;
+    }
+    const iso = this.selectedDayIso;
+    const out: Task[] = [];
+    for (const t of this.items) {
+      if (t.isDeleted) continue;
+      if (this.toIsoDate(new Date(t.endDate)) !== iso) continue;
+      out.push(t);
+    }
+    out.sort((a, b) => this.priorityWeight(b.priority) - this.priorityWeight(a.priority));
+    this.selectedDayTasks = out;
   }
 
   // ---------- UI helpers ----------

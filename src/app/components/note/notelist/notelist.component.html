@@ -44,12 +44,14 @@
       <input
         type="text"
         [(ngModel)]="searchText"
+        (ngModelChange)="onSearchChange()"
         placeholder="Search notes, tags, or body..."
       />
     </div>
     <div class="color-filter">
       <app-select
         [(ngModel)]="selectedColor"
+        (ngModelChange)="onColorFilter()"
         [options]="colorFilterOptions"
         placeholder="Filter by color"
       ></app-select>
@@ -81,15 +83,15 @@
   </ng-container>
 
   <!-- Empty state -->
-  <div class="empty-state" *ngIf="filtered.length === 0">
+  <div class="empty-state" *ngIf="filteredCount === 0">
     <div class="empty-illu" aria-hidden="true">
       <i class="fa-solid fa-note-sticky"></i>
     </div>
-    <h3 *ngIf="notes.length === 0">Your notebook is empty</h3>
-    <h3 *ngIf="notes.length > 0">No notes match this filter</h3>
-    <p *ngIf="notes.length === 0">Capture your first idea — it could be a quick reminder, a list, or a quote you love.</p>
-    <p *ngIf="notes.length > 0">Try a different search term or color.</p>
-    <button class="primary-btn" (click)="openCreate()" *ngIf="notes.length === 0">
+    <h3 *ngIf="totalCount === 0">Your notebook is empty</h3>
+    <h3 *ngIf="totalCount > 0">No notes match this filter</h3>
+    <p *ngIf="totalCount === 0">Capture your first idea — it could be a quick reminder, a list, or a quote you love.</p>
+    <p *ngIf="totalCount > 0">Try a different search term or color.</p>
+    <button class="primary-btn" (click)="openCreate()" *ngIf="totalCount === 0">
       <i class="fa-solid fa-plus"></i>
       <span>New note</span>
     </button>

@@ -13,7 +13,6 @@ import { takeUntil } from 'rxjs/operators';
 
 import { NoteService } from '../../../services/note/note.service';
 import { DataService } from '../../../services/data/data.service';
-import { AuthService } from '../../../services/auth/auth.service';
 import { Note, NoteColor } from '../../../models/models';
 import { ConfirmDialogService } from '../../confirm-dialog/confirm-dialog.service';
 import { AppSelectComponent, SelectOption } from '../../app-select/app-select.component';
@@ -37,9 +36,19 @@ const COLOR_OPTIONS: { value: NoteColor; label: string }[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NotelistComponent implements OnInit, OnDestroy {
-  notes: Note[] = [];
+  private notes: Note[] = [];
   searchText = '';
   selectedColor: NoteColor | 'all' = 'all';
+
+  /** Precomputed buckets — rebuilt only on data or filter changes. */
+  pinnedNotes: Note[] = [];
+  otherNotes: Note[] = [];
+  filteredCount = 0;
+
+  /** Cached aggregates. */
+  totalCount = 0;
+  pinnedCount = 0;
+  tagCount = 0;
 
   /** Editor state. */
   editorOpen = false;
@@ -67,7 +76,6 @@ export class NotelistComponent implements OnInit, OnDestroy {
   constructor(
     private noteService: NoteService,
     private dataService: DataService,
-    private authService: AuthService,
     private confirmDialog: ConfirmDialogService,
     private cdr: ChangeDetectorRef
   ) {}
@@ -85,59 +93,81 @@ export class NotelistComponent implements OnInit, OnDestroy {
   // ---------- Data ----------
 
   load(): void {
-    this.authService.showSpinner();
+    // NoteService is in-memory: defer + Promise.resolve resolves synchronously.
+    // No spinner flash needed — the route loader already covers navigation.
     this.noteService
       .getAll()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
           this.notes = res;
+          this.recomputeAll();
           this.cdr.markForCheck();
-          this.authService.hideSpinner();
         },
-        error: (err: Error) => {
-          this.dataService.showerrorToaster(err.message);
-          this.authService.hideSpinner();
-        },
+        error: (err: Error) => this.dataService.showerrorToaster(err.message),
       });
   }
 
-  // ---------- Filtering / derived ----------
+  // ---------- Filter input → recompute view ----------
 
-  get filtered(): Note[] {
+  onSearchChange(): void {
+    this.rebuildBuckets();
+    this.cdr.markForCheck();
+  }
+  onColorFilter(): void {
+    this.rebuildBuckets();
+    this.cdr.markForCheck();
+  }
+
+  // ---------- Derived ----------
+
+  private recomputeAll(): void {
+    this.recomputeStats();
+    this.rebuildBuckets();
+  }
+
+  private recomputeStats(): void {
+    this.totalCount = this.notes.length;
+    let pinned = 0;
+    const tags = new Set<string>();
+    for (const n of this.notes) {
+      if (n.pinned) pinned++;
+      for (const t of n.tags) tags.add(t);
+    }
+    this.pinnedCount = pinned;
+    this.tagCount = tags.size;
+  }
+
+  private rebuildBuckets(): void {
     const q = this.searchText.trim().toLowerCase();
-    return this.notes.filter((n) => {
-      const matchesText =
-        !q ||
-        n.title.toLowerCase().includes(q) ||
-        n.body.toLowerCase().includes(q) ||
-        n.tags.some((t) => t.toLowerCase().includes(q));
-      const matchesColor =
-        this.selectedColor === 'all' || n.color === this.selectedColor;
-      return matchesText && matchesColor;
-    });
-  }
+    const color = this.selectedColor;
+    const pinned: Note[] = [];
+    const other: Note[] = [];
 
-  get pinnedNotes(): Note[] {
-    return this.filtered
-      .filter((n) => n.pinned)
-      .sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
-  }
+    for (const n of this.notes) {
+      if (color !== 'all' && n.color !== color) continue;
+      if (q) {
+        const inTitle = n.title.toLowerCase().includes(q);
+        const inBody = n.body.toLowerCase().includes(q);
+        let inTags = false;
+        if (!inTitle && !inBody) {
+          for (const t of n.tags) {
+            if (t.toLowerCase().includes(q)) { inTags = true; break; }
+          }
+        }
+        if (!inTitle && !inBody && !inTags) continue;
+      }
+      (n.pinned ? pinned : other).push(n);
+    }
 
-  get otherNotes(): Note[] {
-    return this.filtered
-      .filter((n) => !n.pinned)
-      .sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
-  }
+    const byUpdated = (a: Note, b: Note) =>
+      +new Date(b.updatedAt) - +new Date(a.updatedAt);
+    pinned.sort(byUpdated);
+    other.sort(byUpdated);
 
-  get totalCount(): number {
-    return this.notes.length;
-  }
-  get pinnedCount(): number {
-    return this.notes.filter((n) => n.pinned).length;
-  }
-  get tagCount(): number {
-    return new Set(this.notes.flatMap((n) => n.tags)).size;
+    this.pinnedNotes = pinned;
+    this.otherNotes = other;
+    this.filteredCount = pinned.length + other.length;
   }
 
   // ---------- Editor ----------
@@ -186,33 +216,18 @@ export class NotelistComponent implements OnInit, OnDestroy {
       pinned: this.draft.pinned,
     };
 
-    if (this.editing) {
-      this.noteService
-        .edit(this.editing._id, payload)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (res) => {
-            this.dataService.showSuccessToasterMsg(res.message);
-            this.closeEditor();
-            this.load();
-          },
-          error: (err: Error) =>
-            this.dataService.showerrorToaster(err.message),
-        });
-    } else {
-      this.noteService
-        .add(payload)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (res) => {
-            this.dataService.showSuccessToasterMsg(res.message);
-            this.closeEditor();
-            this.load();
-          },
-          error: (err: Error) =>
-            this.dataService.showerrorToaster(err.message),
-        });
-    }
+    const op$ = this.editing
+      ? this.noteService.edit(this.editing._id, payload)
+      : this.noteService.add(payload);
+
+    op$.pipe(takeUntil(this.destroy$)).subscribe({
+      next: (res) => {
+        this.dataService.showSuccessToasterMsg(res.message);
+        this.closeEditor();
+        this.load();
+      },
+      error: (err: Error) => this.dataService.showerrorToaster(err.message),
+    });
   }
 
   // ---------- Card actions ----------

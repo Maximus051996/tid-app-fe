@@ -66,6 +66,7 @@
         type="text"
         placeholder="Search by name..."
         [(ngModel)]="searchText"
+        (ngModelChange)="onSearchChange()"
       />
     </div>
     <div class="type-chips">
@@ -73,7 +74,8 @@
         *ngFor="let t of types"
         class="chip"
         [class.active]="filterType === t"
-        (click)="filterType = t"
+        (click)="onTypeFilter(t)"
+        type="button"
       >{{ t }}</button>
     </div>
   </div>

@@ -5,7 +5,6 @@ import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { UserService } from '../../services/user/user.service';
-import { NgxSpinnerModule } from 'ngx-spinner';
 import { AuthService } from '../../services/auth/auth.service';
 import { DataService } from '../../services/data/data.service';
 import { BrandLogoComponent } from '../brand-logo/brand-logo.component';
@@ -13,7 +12,7 @@ import { BrandLogoComponent } from '../brand-logo/brand-logo.component';
 @Component({
   selector: 'app-registerlogin',
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule, NgxSpinnerModule, BrandLogoComponent],
+  imports: [ReactiveFormsModule, CommonModule, BrandLogoComponent],
   templateUrl: './registerlogin.component.html',
   styleUrl: './registerlogin.component.scss',
 })

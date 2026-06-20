@@ -7,7 +7,6 @@ import {
   Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { NgxSpinnerModule } from 'ngx-spinner';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -24,7 +23,6 @@ import { AppSelectComponent, SelectOption } from '../../app-select/app-select.co
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    NgxSpinnerModule,
     DateTimePickerComponent,
     AppSelectComponent,
   ],

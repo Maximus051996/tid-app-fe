@@ -1,16 +1,20 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { NgxPaginationModule } from 'ngx-pagination';
-import { NgxSpinnerModule } from 'ngx-spinner';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import * as Highcharts from 'highcharts';
 import { HighchartsChartModule } from 'highcharts-angular';
 
 import { InvestmentService } from '../../../services/investment/investment.service';
-import { AuthService } from '../../../services/auth/auth.service';
 import { DataService } from '../../../services/data/data.service';
 import { ThemeService } from '../../../services/theme/theme.service';
 import { Investment } from '../../../models/models';
@@ -22,24 +26,31 @@ import { ConfirmDialogService } from '../../confirm-dialog/confirm-dialog.servic
   imports: [
     CommonModule,
     FormsModule,
-    NgxSpinnerModule,
     NgxPaginationModule,
     HighchartsChartModule,
   ],
   templateUrl: './investmentlist.component.html',
   styleUrl: './investmentlist.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InvestmentlistComponent implements OnInit, OnDestroy {
   Highcharts = Highcharts;
   allocationOptions: any;
   performanceOptions: any;
 
+  /** Raw items as returned by the service. */
   items: Investment[] = [];
+  /** Precomputed filtered list — recomputed on data or filter change. */
+  filteredItems: Investment[] = [];
+  /** Type chips — recomputed when items change. */
+  types: string[] = ['All'];
+
   searchText = '';
   filterType = 'All';
   currentPage = 1;
   itemsPerPage = 6;
 
+  // Cached aggregates
   totalInvested = 0;
   currentPortfolioValue = 0;
   totalGain = 0;
@@ -47,15 +58,14 @@ export class InvestmentlistComponent implements OnInit, OnDestroy {
   activeCount = 0;
 
   private readonly destroy$ = new Subject<void>();
-  private spinnerTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private service: InvestmentService,
-    private auth: AuthService,
     private data: DataService,
     private router: Router,
     private themeService: ThemeService,
-    private confirmDialog: ConfirmDialogService
+    private confirmDialog: ConfirmDialogService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -64,56 +74,77 @@ export class InvestmentlistComponent implements OnInit, OnDestroy {
     this.themeService.theme$
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
-        if (this.items.length) this.buildCharts();
+        if (this.items.length) {
+          this.buildCharts();
+          this.cdr.markForCheck();
+        }
       });
   }
 
   ngOnDestroy(): void {
-    if (this.spinnerTimer) clearTimeout(this.spinnerTimer);
     this.destroy$.next();
     this.destroy$.complete();
   }
 
   load(): void {
-    this.auth.showSpinner();
+    // Service is in-memory; no spinner needed for synchronous resolution.
     this.service
       .getAll()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
           this.items = res;
-          this.computeStats();
-          this.buildCharts();
+          this.recomputeAll();
           const activeNonDeleted = res.filter(
             (i) => !i.isDeleted && i.status === 'Active'
           ).length;
           this.data.changeInvestmentCount(activeNonDeleted);
-          if (this.spinnerTimer) clearTimeout(this.spinnerTimer);
-          this.spinnerTimer = setTimeout(() => {
-            this.auth.hideSpinner();
-            this.spinnerTimer = null;
-          }, 300);
+          this.cdr.markForCheck();
         },
-        error: (err: Error) => {
-          this.data.showerrorToaster(err.message);
-          this.auth.hideSpinner();
-        },
+        error: (err: Error) => this.data.showerrorToaster(err.message),
       });
   }
 
-  get filteredItems(): Investment[] {
-    return this.items.filter((i) => {
-      const matchesText = i.name
-        .toLowerCase()
-        .includes(this.searchText.toLowerCase());
-      const matchesType = this.filterType === 'All' || i.type === this.filterType;
-      return matchesText && matchesType;
-    });
+  // ---------- Filter input → recompute ----------
+
+  onSearchChange(): void {
+    this.rebuildFiltered();
+    this.cdr.markForCheck();
+  }
+  onTypeFilter(type: string): void {
+    this.filterType = type;
+    this.rebuildFiltered();
+    this.cdr.markForCheck();
   }
 
-  get types(): string[] {
-    return ['All', ...Array.from(new Set(this.items.map((i) => i.type)))];
+  // ---------- Derived ----------
+
+  private recomputeAll(): void {
+    this.computeStats();
+    this.computeTypes();
+    this.rebuildFiltered();
+    this.buildCharts();
   }
+
+  private rebuildFiltered(): void {
+    const q = this.searchText.trim().toLowerCase();
+    const type = this.filterType;
+    const out: Investment[] = [];
+    for (const i of this.items) {
+      if (type !== 'All' && i.type !== type) continue;
+      if (q && !i.name.toLowerCase().includes(q)) continue;
+      out.push(i);
+    }
+    this.filteredItems = out;
+  }
+
+  private computeTypes(): void {
+    const set = new Set<string>();
+    for (const i of this.items) set.add(i.type);
+    this.types = ['All', ...Array.from(set)];
+  }
+
+  // ---------- Navigation / actions ----------
 
   addItem(): void {
     this.router.navigate(['/add-investment']);
@@ -146,7 +177,6 @@ export class InvestmentlistComponent implements OnInit, OnDestroy {
       icon: 'fa-solid fa-trash',
     });
     if (!ok) return;
-    this.auth.showSpinner();
     this.service
       .delete(id)
       .pipe(takeUntil(this.destroy$))
@@ -155,10 +185,7 @@ export class InvestmentlistComponent implements OnInit, OnDestroy {
           this.data.showSuccessToasterMsg(res.message);
           this.load();
         },
-        error: (err: Error) => {
-          this.data.showerrorToaster(err.message);
-          this.auth.hideSpinner();
-        },
+        error: (err: Error) => this.data.showerrorToaster(err.message),
       });
   }
 

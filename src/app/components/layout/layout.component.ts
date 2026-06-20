@@ -4,7 +4,6 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { Subject } from 'rxjs';
 import { filter, takeUntil } from 'rxjs/operators';
 import { AuthService } from '../../services/auth/auth.service';
-import { NgxSpinnerModule } from 'ngx-spinner';
 import { DataService } from '../../services/data/data.service';
 import { AssistantComponent } from '../assistant/assistant.component';
 import { Theme, ThemeService } from '../../services/theme/theme.service';
@@ -37,7 +36,6 @@ const COLLAPSED_KEY = 'tid.sidebar.collapsed';
     RouterLink,
     CommonModule,
     RouterLinkActive,
-    NgxSpinnerModule,
     AssistantComponent,
     BrandLogoComponent,
   ],

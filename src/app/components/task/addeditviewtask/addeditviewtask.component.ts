@@ -8,7 +8,6 @@ import {
   Validators,
 } from '@angular/forms';
 import { TaskService } from '../../../services/task/task.service';
-import { NgxSpinnerModule } from 'ngx-spinner';
 import { AuthService } from '../../../services/auth/auth.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject } from 'rxjs';
@@ -23,7 +22,6 @@ import { AppSelectComponent, SelectOption } from '../../app-select/app-select.co
   imports: [
     ReactiveFormsModule,
     CommonModule,
-    NgxSpinnerModule,
     DateTimePickerComponent,
     AppSelectComponent,
   ],
