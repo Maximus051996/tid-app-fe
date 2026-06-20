@@ -1,53 +1,124 @@
 import { Routes } from '@angular/router';
-import { TasklistComponent } from './components/task/tasklist/tasklist.component';
-import { RegisterloginComponent } from './components/registerlogin/registerlogin.component';
 import { LayoutComponent } from './components/layout/layout.component';
 import { authGuardGuard, roleGuard } from './middlewares/guards/auth-guard.guard';
-import { PagenotfoundComponent } from './components/pagenotfound/pagenotfound.component';
-import { AddeditviewtaskComponent } from './components/task/addeditviewtask/addeditviewtask.component';
-import { InvestmentlistComponent } from './components/investment/investmentlist/investmentlist.component';
-import { AddeditviewinvestmentComponent } from './components/investment/addeditviewinvestment/addeditviewinvestment.component';
-import { AdminComponent } from './components/admin/admin.component';
-import { CalendarComponent } from './components/calendar/calendar.component';
-import { NotelistComponent } from './components/note/notelist/notelist.component';
-import { GoallistComponent } from './components/goal/goallist/goallist.component';
-import { HelpComponent } from './components/help/help.component';
 
+/**
+ * Every page is lazy-loaded so the initial bundle stays small.
+ * The shell (LayoutComponent + login screen) is the only eager-loaded UI.
+ */
 export const routes: Routes = [
   { path: '', redirectTo: 'register-login', pathMatch: 'full' },
   {
     path: 'register-login',
-    component: RegisterloginComponent,
+    loadComponent: () =>
+      import('./components/registerlogin/registerlogin.component').then(
+        (m) => m.RegisterloginComponent
+      ),
   },
   {
     path: '',
     component: LayoutComponent,
     canActivate: [authGuardGuard],
     children: [
-      { path: 'taskinfo', component: TasklistComponent },
-      { path: 'calendar', component: CalendarComponent },
-      { path: 'add-task', component: AddeditviewtaskComponent },
-      { path: 'edit-task/:id', component: AddeditviewtaskComponent },
-      { path: 'view-task/:id', component: AddeditviewtaskComponent },
-      { path: 'investmentinfo', component: InvestmentlistComponent },
-      { path: 'add-investment', component: AddeditviewinvestmentComponent },
+      {
+        path: 'goals',
+        loadComponent: () =>
+          import('./components/goal/goallist/goallist.component').then(
+            (m) => m.GoallistComponent
+          ),
+      },
+      {
+        path: 'taskinfo',
+        loadComponent: () =>
+          import('./components/task/tasklist/tasklist.component').then(
+            (m) => m.TasklistComponent
+          ),
+      },
+      {
+        path: 'add-task',
+        loadComponent: () =>
+          import('./components/task/addeditviewtask/addeditviewtask.component').then(
+            (m) => m.AddeditviewtaskComponent
+          ),
+      },
+      {
+        path: 'edit-task/:id',
+        loadComponent: () =>
+          import('./components/task/addeditviewtask/addeditviewtask.component').then(
+            (m) => m.AddeditviewtaskComponent
+          ),
+      },
+      {
+        path: 'view-task/:id',
+        loadComponent: () =>
+          import('./components/task/addeditviewtask/addeditviewtask.component').then(
+            (m) => m.AddeditviewtaskComponent
+          ),
+      },
+      {
+        path: 'notes',
+        loadComponent: () =>
+          import('./components/note/notelist/notelist.component').then(
+            (m) => m.NotelistComponent
+          ),
+      },
+      {
+        path: 'calendar',
+        loadComponent: () =>
+          import('./components/calendar/calendar.component').then(
+            (m) => m.CalendarComponent
+          ),
+      },
+      {
+        path: 'investmentinfo',
+        loadComponent: () =>
+          import('./components/investment/investmentlist/investmentlist.component').then(
+            (m) => m.InvestmentlistComponent
+          ),
+      },
+      {
+        path: 'add-investment',
+        loadComponent: () =>
+          import('./components/investment/addeditviewinvestment/addeditviewinvestment.component').then(
+            (m) => m.AddeditviewinvestmentComponent
+          ),
+      },
       {
         path: 'edit-investment/:id',
-        component: AddeditviewinvestmentComponent,
+        loadComponent: () =>
+          import('./components/investment/addeditviewinvestment/addeditviewinvestment.component').then(
+            (m) => m.AddeditviewinvestmentComponent
+          ),
       },
       {
         path: 'view-investment/:id',
-        component: AddeditviewinvestmentComponent,
+        loadComponent: () =>
+          import('./components/investment/addeditviewinvestment/addeditviewinvestment.component').then(
+            (m) => m.AddeditviewinvestmentComponent
+          ),
       },
-      { path: 'notes', component: NotelistComponent },
-      { path: 'goals', component: GoallistComponent },
-      { path: 'help', component: HelpComponent },
+      {
+        path: 'help',
+        loadComponent: () =>
+          import('./components/help/help.component').then(
+            (m) => m.HelpComponent
+          ),
+      },
       {
         path: 'admin',
-        component: AdminComponent,
+        loadComponent: () =>
+          import('./components/admin/admin.component').then(
+            (m) => m.AdminComponent
+          ),
         canActivate: [roleGuard(['admin'])],
       },
-      { path: '**', component: PagenotfoundComponent },
+      {
+        path: '**',
+        loadComponent: () =>
+          import('./components/pagenotfound/pagenotfound.component').then(
+            (m) => m.PagenotfoundComponent
+          ),
+      },
     ],
   },
 ];

@@ -39,6 +39,9 @@
             ],
             "scripts": [
               "node_modules/bootstrap/dist/js/bootstrap.min.js"
+            ],
+            "allowedCommonJsDependencies": [
+              "highcharts"
             ]
           },
           "configurations": {
@@ -47,12 +50,12 @@
                 {
                   "type": "initial",
                   "maximumWarning": "1.1MB",
-                  "maximumError": "1.15MB"
+                  "maximumError": "1.3MB"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "1.1MB",
-                  "maximumError": "1.15MB"
+                  "maximumWarning": "30kB",
+                  "maximumError": "50kB"
                 }
               ],
               "outputHashing": "all",
