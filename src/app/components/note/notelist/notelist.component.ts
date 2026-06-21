@@ -102,6 +102,9 @@ export class NotelistComponent implements OnInit, OnDestroy {
         next: (res) => {
           this.notes = res;
           this.recomputeAll();
+          this.dataService.changeNoteCount(
+            this.notes.filter((n) => !n.isDeleted).length
+          );
           this.cdr.markForCheck();
         },
         error: (err: Error) => this.dataService.showerrorToaster(err.message),

@@ -466,11 +466,14 @@ export class AssistantService implements OnDestroy {
 
   private runScan(announce: boolean, forceBriefing = false): void {
     this.thinkingSubject.next(true);
+    // Manual scans (announce=true) get the global loader; background polls
+    // and snooze-driven re-scans stay silent so the spinner doesn't flash.
+    const silent = !announce;
     const sub = forkJoin({
-      tasks: this.taskService.getallTasks(),
-      goals: this.goalService.getAll(),
-      notes: this.noteService.getAll(),
-      investments: this.investmentService.getAll(),
+      tasks: this.taskService.getallTasks(silent),
+      goals: this.goalService.getAll(silent),
+      notes: this.noteService.getAll(silent),
+      investments: this.investmentService.getAll(silent),
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe({

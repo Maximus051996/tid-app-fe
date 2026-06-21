@@ -147,6 +147,9 @@ export class GoallistComponent implements OnInit, OnDestroy {
         next: (res) => {
           this.goals = res;
           this.recomputeAll();
+          this.dataService.changeGoalCount(
+            this.goals.filter((g) => !g.isDeleted && g.status === 'active').length
+          );
           this.cdr.markForCheck();
         },
         error: (err: Error) => this.dataService.showerrorToaster(err.message),

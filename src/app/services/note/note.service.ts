@@ -12,8 +12,8 @@ interface NoteEnvelope {
 export class NoteService {
   constructor(private api: ApiService) {}
 
-  getAll(): Observable<Note[]> {
-    return this.api.get<Note[]>('/notes');
+  getAll(silent = false): Observable<Note[]> {
+    return this.api.get<Note[]>('/notes', { silent });
   }
 
   getById(id: string): Observable<Note> {

@@ -12,8 +12,8 @@ interface GoalEnvelope {
 export class GoalService {
   constructor(private api: ApiService) {}
 
-  getAll(): Observable<Goal[]> {
-    return this.api.get<Goal[]>('/goals');
+  getAll(silent = false): Observable<Goal[]> {
+    return this.api.get<Goal[]>('/goals', { silent });
   }
 
   getById(id: string): Observable<Goal> {

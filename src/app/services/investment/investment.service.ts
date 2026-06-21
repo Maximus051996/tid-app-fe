@@ -12,8 +12,8 @@ interface InvestmentEnvelope {
 export class InvestmentService {
   constructor(private api: ApiService) {}
 
-  getAll(): Observable<Investment[]> {
-    return this.api.get<Investment[]>('/investments');
+  getAll(silent = false): Observable<Investment[]> {
+    return this.api.get<Investment[]>('/investments', { silent });
   }
 
   getById(id: string): Observable<Investment> {
