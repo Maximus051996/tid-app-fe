@@ -229,18 +229,6 @@
         <i class="fa-solid fa-circle-question"></i>
         <span class="nav-label" *ngIf="!isCollapsed">Help &amp; docs</span>
       </a>
-      <a
-        routerLink="backup"
-        class="nav-link"
-        [routerLinkActive]="['active']"
-        [routerLinkActiveOptions]="{ exact: true }"
-        [title]="isCollapsed ? 'Backup & sync' : ''"
-        (click)="closeMobile()"
-      >
-        <span class="active-rail" aria-hidden="true"></span>
-        <i class="fa-solid fa-cloud-arrow-down"></i>
-        <span class="nav-label" *ngIf="!isCollapsed">Backup &amp; sync</span>
-      </a>
       <button
         class="nav-link logout"
         type="button"

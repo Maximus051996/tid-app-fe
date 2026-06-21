@@ -1,14 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
-import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Subject } from 'rxjs';
-import { filter, takeUntil } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 import { AuthService } from '../../services/auth/auth.service';
 import { DataService } from '../../services/data/data.service';
 import { AssistantComponent } from '../assistant/assistant.component';
 import { Theme, ThemeService } from '../../services/theme/theme.service';
 import { BrandLogoComponent } from '../brand-logo/brand-logo.component';
-import { StorageService } from '../../services/storage/storage.service';
 import {
   APP_AUTHOR,
   APP_COPYRIGHT,
@@ -97,7 +96,6 @@ export class LayoutComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private dataService: DataService,
     private themeService: ThemeService,
-    private storage: StorageService,
     private router: Router
   ) {}
 
@@ -113,44 +111,20 @@ export class LayoutComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe((c) => (this.investmentCount = c));
 
+    this.dataService.noteCount$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((c) => (this.noteCount = c));
+
+    this.dataService.goalCount$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((c) => (this.goalCount = c));
+
     this.themeService.theme$
       .pipe(takeUntil(this.destroy$))
       .subscribe((t) => (this.theme = t));
 
-    this.refreshSecondaryCounts();
-    // Recompute notes/goals counts whenever a navigation finishes —
-    // cheap (in-memory list count) and keeps the badges accurate.
-    this.router.events
-      .pipe(
-        filter((e) => e instanceof NavigationEnd),
-        takeUntil(this.destroy$)
-      )
-      .subscribe(() => this.refreshSecondaryCounts());
-
     this.detectViewport();
     this.collapsed = localStorage.getItem(COLLAPSED_KEY) === 'true';
-  }
-
-  private refreshSecondaryCounts(): void {
-    const userId = this.authService.getUserId();
-    if (!userId) {
-      this.noteCount = 0;
-      this.goalCount = 0;
-      return;
-    }
-    const isAdmin = this.authService.isAdmin();
-    const notes = this.storage.getNotes().filter((n) => !n.isDeleted);
-    const goals = this.storage.getGoals().filter((g) => !g.isDeleted);
-    this.noteCount = (isAdmin
-      ? notes
-      : notes.filter((n) => n.ownerId === userId)
-    ).length;
-    this.goalCount = (isAdmin
-      ? goals.filter((g) => g.status === 'active')
-      : goals.filter(
-          (g) => g.ownerId === userId && g.status === 'active'
-        )
-    ).length;
   }
 
   ngOnDestroy(): void {

@@ -17,8 +17,8 @@ interface TaskResponseEnvelope {
 export class TaskService {
   constructor(private api: ApiService) {}
 
-  getallTasks(): Observable<Task[]> {
-    return this.api.get<Task[]>('/tasks');
+  getallTasks(silent = false): Observable<Task[]> {
+    return this.api.get<Task[]>('/tasks', { silent });
   }
 
   gettaskbyId(id: string): Observable<Task> {
