@@ -18,6 +18,13 @@ import { AuthService } from '../../../services/auth/auth.service';
 import { SentenceCasePipe } from '../../../pipes/sentence-case.pipe';
 import { Task } from '../../../models/models';
 import { ConfirmDialogService } from '../../confirm-dialog/confirm-dialog.service';
+import {
+  formatIst,
+  fromIstWall,
+  istIsoDate,
+  istStartOfDay,
+  toIstWall,
+} from '../../../utils/ist-time';
 
 interface DayCell {
   label: string;          // Mon, Tue ...
@@ -96,7 +103,7 @@ export class TasklistComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.userName = this.authService.getUserName() ?? '';
     this.greeting = this.greetingFor(new Date());
-    this.todayLabel = new Date().toLocaleDateString(undefined, {
+    this.todayLabel = formatIst(new Date(), {
       weekday: 'long',
       month: 'long',
       day: 'numeric',
@@ -165,21 +172,19 @@ export class TasklistComponent implements OnInit, OnDestroy {
   }
 
   private buildWeekStrip(): void {
-    const now = new Date();
-    const today = this.startOfDay(now);
+    const todayWall = toIstWall(new Date());
     const live = this.items.filter((t) => !t.isDeleted);
 
     this.weekStrip = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(today);
-      d.setDate(today.getDate() + i);
-      const iso = this.toIsoDate(d);
+      const d = fromIstWall(todayWall.year, todayWall.month, todayWall.day + i, 0, 0, 0, 0);
+      const iso = istIsoDate(d);
 
-      const dayTasks = live.filter((t) => this.toIsoDate(new Date(t.endDate)) === iso);
+      const dayTasks = live.filter((t) => istIsoDate(new Date(t.endDate)) === iso);
 
       return {
-        label: d.toLocaleDateString(undefined, { weekday: 'short' }),
-        dateLabel: String(d.getDate()),
-        monthLabel: d.toLocaleDateString(undefined, { month: 'short' }),
+        label: formatIst(d, { weekday: 'short' }),
+        dateLabel: String(toIstWall(d).day),
+        monthLabel: formatIst(d, { month: 'short' }),
         isToday: i === 0,
         count: dayTasks.length,
         highCount: dayTasks.filter((t) => t.priority === 'High').length,
@@ -397,14 +402,11 @@ export class TasklistComponent implements OnInit, OnDestroy {
   // ---------- Date utils ----------
 
   private startOfDay(d: Date): Date {
-    const c = new Date(d);
-    c.setHours(0, 0, 0, 0);
-    return c;
+    return istStartOfDay(d);
   }
 
   private toIsoDate(d: Date): string {
-    const pad = (n: number) => (n < 10 ? '0' + n : n);
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    return istIsoDate(d);
   }
 
   private priorityWeight(p: string): number {
@@ -412,7 +414,7 @@ export class TasklistComponent implements OnInit, OnDestroy {
   }
 
   private greetingFor(d: Date): string {
-    const h = d.getHours();
+    const h = toIstWall(d).hours;
     if (h < 12) return 'Good morning';
     if (h < 17) return 'Good afternoon';
     return 'Good evening';

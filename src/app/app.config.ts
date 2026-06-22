@@ -4,6 +4,7 @@ import {
   provideZoneChangeDetection,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { DATE_PIPE_DEFAULT_OPTIONS } from '@angular/common';
 
 import { routes } from './app.routes';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -32,6 +33,9 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideAnimationsAsync(),
     provideToastr(),
+    // Pin every `{{ value | date }}` to IST so the app shows the same
+    // time on every device regardless of the OS timezone.
+    { provide: DATE_PIPE_DEFAULT_OPTIONS, useValue: { timezone: '+0530' } },
     // Order matters: auth interceptor runs first to attach the bearer token,
     // then the loader interceptor wraps the request with show/hide.
     provideHttpClient(

@@ -24,6 +24,7 @@ import {
 } from '../../services/assistant/assistant.service';
 import { DataService } from '../../services/data/data.service';
 import { AuthService } from '../../services/auth/auth.service';
+import { formatIst, istIsoDate } from '../../utils/ist-time';
 
 type QuickPrompt = { label: string; icon: string; prompt: string };
 
@@ -331,7 +332,7 @@ export class AssistantComponent implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   private timeGreeting(): string {
-    const h = new Date().getHours();
+    const h = new Date(Date.now() + 5.5 * 60 * 60 * 1000).getUTCHours();
     if (h < 5) return 'Working late';
     if (h < 12) return 'Good morning';
     if (h < 17) return 'Good afternoon';
@@ -510,29 +511,37 @@ export class AssistantComponent implements OnInit, AfterViewChecked, OnDestroy {
     if (diff < 60) return 'Just now';
     if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)} h ago`;
-    return new Date(this.lastCheck).toLocaleDateString();
+    return formatIst(new Date(this.lastCheck), {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
   }
 
   timeOf(ts: number): string {
-    return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return formatIst(new Date(ts), {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
   }
 
-  /** Group messages by date label for a friendlier feed. */
+  /** Group messages by IST date label for a friendlier feed. */
   shouldShowDateBreak(index: number): boolean {
     if (index === 0) return true;
     const prev = this.messages[index - 1];
     const cur = this.messages[index];
-    return new Date(prev.timestamp).toDateString() !== new Date(cur.timestamp).toDateString();
+    return istIsoDate(new Date(prev.timestamp)) !== istIsoDate(new Date(cur.timestamp));
   }
 
   dayLabel(ts: number): string {
     const d = new Date(ts);
-    const today = new Date();
-    const yest = new Date();
-    yest.setDate(today.getDate() - 1);
-    if (d.toDateString() === today.toDateString()) return 'Today';
-    if (d.toDateString() === yest.toDateString()) return 'Yesterday';
-    return d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+    const todayIso = istIsoDate(new Date());
+    const yest = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const dIso = istIsoDate(d);
+    if (dIso === todayIso) return 'Today';
+    if (dIso === istIsoDate(yest)) return 'Yesterday';
+    return formatIst(d, { weekday: 'long', month: 'short', day: 'numeric' });
   }
 
   trackByMessage(_: number, m: AssistantMessage): string {

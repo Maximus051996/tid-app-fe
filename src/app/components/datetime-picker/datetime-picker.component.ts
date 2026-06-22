@@ -10,6 +10,13 @@ import {
   ViewChild,
 } from '@angular/core';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
+import {
+  formatIst,
+  fromIstWall,
+  istIsoDate,
+  istNow,
+  toIstWall,
+} from '../../utils/ist-time';
 
 interface DayCell {
   date: Date;
@@ -96,7 +103,7 @@ const WEEKDAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
               (click)="toggleMonthList()"
               [class.active]="showMonthList"
             >
-              {{ MONTHS[cursor.getMonth()] }}
+              {{ MONTHS[cursorMonth] }}
               <i class="fa-solid fa-caret-down"></i>
             </button>
             <button
@@ -105,7 +112,7 @@ const WEEKDAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
               (click)="toggleYearList()"
               [class.active]="showYearList"
             >
-              {{ cursor.getFullYear() }}
+              {{ cursorYear }}
               <i class="fa-solid fa-caret-down"></i>
             </button>
           </div>
@@ -121,7 +128,7 @@ const WEEKDAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
             *ngFor="let m of MONTHS; let i = index"
             type="button"
             class="dtp-list-item"
-            [class.active]="cursor.getMonth() === i"
+            [class.active]="cursorMonth === i"
             (click)="setMonth(i)"
           >{{ m.substring(0, 3) }}</button>
         </div>
@@ -131,7 +138,7 @@ const WEEKDAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
             *ngFor="let y of yearRange()"
             type="button"
             class="dtp-list-item"
-            [class.active]="cursor.getFullYear() === y"
+            [class.active]="cursorYear === y"
             (click)="setYear(y)"
           >{{ y }}</button>
         </div>
@@ -236,11 +243,24 @@ export class DateTimePickerComponent implements ControlValueAccessor {
   showMonthList = false;
   showYearList = false;
 
+  /** The UTC instant currently selected (may be null). */
   selectedDate: Date | null = null;
-  cursor: Date = this.startOfDay(new Date());
+  /**
+   * `cursor` is the first day of the visible month, expressed as the IST
+   * wall-clock moment at 00:00 IST. We keep it as a Date for ergonomic
+   * arithmetic, but every read uses the IST helpers below.
+   */
+  cursor: Date = (() => {
+    const n = istNow();
+    return fromIstWall(n.year, n.month, n.day, 0, 0, 0, 0);
+  })();
   hours = 9;
   minutes = 0;
   monthCells: DayCell[] = [];
+
+  /** Cached IST view of `cursor` so the template can read year/month cheaply. */
+  cursorYear = 0;
+  cursorMonth = 0; // 0-11 to match Date semantics
 
   isDisabled = false;
 
@@ -258,6 +278,7 @@ export class DateTimePickerComponent implements ControlValueAccessor {
   private onTouched: () => void = () => {};
 
   constructor(private host: ElementRef<HTMLElement>, private cdr: ChangeDetectorRef) {
+    this.syncCursorIst();
     this.buildCalendar();
   }
 
@@ -267,16 +288,18 @@ export class DateTimePickerComponent implements ControlValueAccessor {
     if (value) {
       const d = new Date(value);
       if (!isNaN(d.getTime())) {
+        const w = toIstWall(d);
         this.selectedDate = d;
-        this.cursor = this.startOfDay(d);
-        this.hours = d.getHours();
-        this.minutes = d.getMinutes();
+        this.cursor = fromIstWall(w.year, w.month, w.day, 0, 0, 0, 0);
+        this.hours = w.hours;
+        this.minutes = w.minutes;
       } else {
         this.selectedDate = null;
       }
     } else {
       this.selectedDate = null;
     }
+    this.syncCursorIst();
     this.buildCalendar();
     this.cdr.markForCheck();
   }
@@ -302,7 +325,11 @@ export class DateTimePickerComponent implements ControlValueAccessor {
     if (this.open) {
       this.showMonthList = false;
       this.showYearList = false;
-      if (this.selectedDate) this.cursor = this.startOfDay(this.selectedDate);
+      if (this.selectedDate) {
+        const w = toIstWall(this.selectedDate);
+        this.cursor = fromIstWall(w.year, w.month, w.day, 0, 0, 0, 0);
+      }
+      this.syncCursorIst();
       this.buildCalendar();
     } else {
       this.onTouched();
@@ -333,12 +360,22 @@ export class DateTimePickerComponent implements ControlValueAccessor {
   // ---------- Navigation ----------
 
   prevMonth(): void {
-    this.cursor = new Date(this.cursor.getFullYear(), this.cursor.getMonth() - 1, 1);
+    const w = toIstWall(this.cursor);
+    const prevMonthIdx = w.month - 2; // toIstWall.month is 1-12
+    const baseYear = w.year + Math.floor(prevMonthIdx / 12);
+    const baseMonth = ((prevMonthIdx % 12) + 12) % 12;
+    this.cursor = fromIstWall(baseYear, baseMonth + 1, 1, 0, 0, 0, 0);
+    this.syncCursorIst();
     this.buildCalendar();
   }
 
   nextMonth(): void {
-    this.cursor = new Date(this.cursor.getFullYear(), this.cursor.getMonth() + 1, 1);
+    const w = toIstWall(this.cursor);
+    const nextMonthIdx = w.month; // 0-based after subtracting 1 then adding 1
+    const baseYear = w.year + Math.floor(nextMonthIdx / 12);
+    const baseMonth = nextMonthIdx % 12;
+    this.cursor = fromIstWall(baseYear, baseMonth + 1, 1, 0, 0, 0, 0);
+    this.syncCursorIst();
     this.buildCalendar();
   }
 
@@ -353,29 +390,34 @@ export class DateTimePickerComponent implements ControlValueAccessor {
   }
 
   setMonth(monthIndex: number): void {
-    this.cursor = new Date(this.cursor.getFullYear(), monthIndex, 1);
+    const w = toIstWall(this.cursor);
+    this.cursor = fromIstWall(w.year, monthIndex + 1, 1, 0, 0, 0, 0);
     this.showMonthList = false;
+    this.syncCursorIst();
     this.buildCalendar();
   }
 
   setYear(year: number): void {
-    this.cursor = new Date(year, this.cursor.getMonth(), 1);
+    const w = toIstWall(this.cursor);
+    this.cursor = fromIstWall(year, w.month, 1, 0, 0, 0, 0);
     this.showYearList = false;
+    this.syncCursorIst();
     this.buildCalendar();
   }
 
   yearRange(): number[] {
-    const cur = this.cursor.getFullYear();
+    const cur = this.cursorYear;
     const start = cur - 7;
     return Array.from({ length: 16 }, (_, i) => start + i);
   }
 
   goToday(): void {
-    const today = new Date();
-    this.cursor = this.startOfDay(today);
-    this.selectedDate = new Date(today);
-    this.hours = today.getHours();
-    this.minutes = today.getMinutes();
+    const n = istNow();
+    this.cursor = fromIstWall(n.year, n.month, n.day, 0, 0, 0, 0);
+    this.selectedDate = fromIstWall(n.year, n.month, n.day, n.hours, n.minutes, 0, 0);
+    this.hours = n.hours;
+    this.minutes = n.minutes;
+    this.syncCursorIst();
     this.buildCalendar();
     this.commit();
   }
@@ -383,10 +425,13 @@ export class DateTimePickerComponent implements ControlValueAccessor {
   // ---------- Selection ----------
 
   selectDay(cell: DayCell): void {
-    const next = new Date(cell.date);
-    next.setHours(this.hours, this.minutes, 0, 0);
-    this.selectedDate = next;
-    this.cursor = this.startOfDay(cell.date);
+    // `cell.date` represents the IST midnight of the day clicked. Combine
+    // it with the currently chosen hour/minute (also IST wall-clock) and
+    // store the resulting UTC instant.
+    const w = toIstWall(cell.date);
+    this.selectedDate = fromIstWall(w.year, w.month, w.day, this.hours, this.minutes, 0, 0);
+    this.cursor = fromIstWall(w.year, w.month, w.day, 0, 0, 0, 0);
+    this.syncCursorIst();
     this.buildCalendar();
     if (!this.includeTime) {
       this.commit();
@@ -441,8 +486,8 @@ export class DateTimePickerComponent implements ControlValueAccessor {
 
   private applyTimeToSelection(): void {
     if (this.selectedDate) {
-      this.selectedDate.setHours(this.hours, this.minutes, 0, 0);
-      this.selectedDate = new Date(this.selectedDate);
+      const w = toIstWall(this.selectedDate);
+      this.selectedDate = fromIstWall(w.year, w.month, w.day, this.hours, this.minutes, 0, 0);
     }
     this.cdr.markForCheck();
   }
@@ -475,7 +520,7 @@ export class DateTimePickerComponent implements ControlValueAccessor {
   formattedValue(): string {
     if (!this.selectedDate) return '';
     if (this.includeTime) {
-      return this.selectedDate.toLocaleString(undefined, {
+      return formatIst(this.selectedDate, {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
@@ -484,7 +529,7 @@ export class DateTimePickerComponent implements ControlValueAccessor {
         hour12: false,
       });
     }
-    return this.selectedDate.toLocaleDateString(undefined, {
+    return formatIst(this.selectedDate, {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
@@ -497,29 +542,35 @@ export class DateTimePickerComponent implements ControlValueAccessor {
 
   // ---------- Calendar build ----------
 
+  private syncCursorIst(): void {
+    const w = toIstWall(this.cursor);
+    this.cursorYear = w.year;
+    this.cursorMonth = w.month - 1; // template uses 0-11
+  }
+
   private buildCalendar(): void {
-    const year = this.cursor.getFullYear();
-    const month = this.cursor.getMonth();
-    const firstOfMonth = new Date(year, month, 1);
-    const startWeekday = (firstOfMonth.getDay() + 6) % 7; // Mon=0
+    const cw = toIstWall(this.cursor);
+    const year = cw.year;
+    const month = cw.month; // 1-12
 
-    const start = new Date(firstOfMonth);
-    start.setDate(start.getDate() - startWeekday);
+    // First-of-month at IST midnight, as a UTC instant. Use IST weekday
+    // (Sun=0..Sat=6) so the grid lines up regardless of device timezone.
+    const firstOfMonth = fromIstWall(year, month, 1, 0, 0, 0, 0);
+    const startWeekday = (this.istWeekday(firstOfMonth) + 6) % 7; // Mon=0
 
-    const today = new Date();
-    const todayIso = this.toIso(today);
-    const selectedIso = this.selectedDate ? this.toIso(this.selectedDate) : null;
+    const todayIso = istIsoDate(new Date());
+    const selectedIso = this.selectedDate ? istIsoDate(this.selectedDate) : null;
 
     const cells: DayCell[] = [];
     for (let i = 0; i < 42; i++) {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      d.setHours(0, 0, 0, 0);
-      const iso = this.toIso(d);
+      const offset = i - startWeekday;
+      const d = fromIstWall(year, month, 1 + offset, 0, 0, 0, 0);
+      const dw = toIstWall(d);
+      const iso = istIsoDate(d);
       cells.push({
         date: d,
-        day: d.getDate(),
-        inMonth: d.getMonth() === month,
+        day: dw.day,
+        inMonth: dw.month === month,
         isToday: iso === todayIso,
         isSelected: iso === selectedIso,
         iso,
@@ -529,27 +580,20 @@ export class DateTimePickerComponent implements ControlValueAccessor {
     this.cdr.markForCheck();
   }
 
-  private startOfDay(d: Date): Date {
-    const c = new Date(d);
-    c.setHours(0, 0, 0, 0);
-    return c;
-  }
-
-  private toIso(d: Date): string {
-    return `${d.getFullYear()}-${this.pad(d.getMonth() + 1)}-${this.pad(d.getDate())}`;
+  /** IST weekday with 0=Sunday … 6=Saturday, mirroring `Date.getDay`. */
+  private istWeekday(d: Date): number {
+    const shifted = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
+    return shifted.getUTCDay();
   }
 
   /**
    * Always emit a fully-qualified ISO 8601 UTC string (e.g.
-   * `2026-06-22T15:00:00.000Z`). This way the backend stores the exact
-   * instant the user picked in their local timezone, and round-tripping
-   * back through `new Date(...)` produces the same wall-clock time the
-   * user sees in the picker. For date-only mode, emit `YYYY-MM-DD`.
+   * `2026-06-22T15:00:00.000Z`) representing the exact IST instant the
+   * user picked. For date-only mode we emit `YYYY-MM-DD` computed against
+   * IST so the string matches the day shown in the picker.
    */
   private formatForOutput(d: Date): string {
-    if (!this.includeTime) {
-      return `${d.getFullYear()}-${this.pad(d.getMonth() + 1)}-${this.pad(d.getDate())}`;
-    }
+    if (!this.includeTime) return istIsoDate(d);
     return d.toISOString();
   }
 }

@@ -12,6 +12,7 @@ import {
   Note,
   Task,
 } from '../../models/models';
+import { formatIst, istIsoDate } from '../../utils/ist-time';
 
 export type AssistantTone = 'info' | 'warning' | 'danger' | 'success';
 export type AssistantDomain = 'task' | 'goal' | 'note' | 'investment';
@@ -91,10 +92,9 @@ const DEFAULT_SETTINGS: AssistantSettings = {
   dailyBriefing: true,
 };
 
-/** ISO yyyy-mm-dd local */
+/** ISO yyyy-mm-dd in IST so "today" is the same calendar day for everyone. */
 function isoDay(d: Date): string {
-  const pad = (n: number) => (n < 10 ? '0' + n : n);
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return istIsoDate(d);
 }
 
 /**
@@ -610,7 +610,7 @@ export class AssistantService implements OnDestroy {
         tone: 'danger',
         icon: 'fa-triangle-exclamation',
         title: t.subject,
-        detail: `Overdue since ${new Date(t.endDate).toLocaleDateString()}`,
+        detail: `Overdue since ${formatIst(new Date(t.endDate), { day: '2-digit', month: 'short', year: 'numeric' })}`,
         cta: { label: 'Mark in progress', action: 'mark-progress' },
       })
     );
@@ -882,7 +882,7 @@ export class AssistantService implements OnDestroy {
           this.pushBot(
             `Created task "${subject}"${
               priority !== 'Medium' ? ` (${priority} priority)` : ''
-            }${endDate ? ` due ${endDate.toLocaleDateString()}` : ''}.`,
+            }${endDate ? ` due ${formatIst(endDate, { day: '2-digit', month: 'short', year: 'numeric' })}` : ''}.`,
             [
               {
                 id: `qc-task-${res.task._id}`,

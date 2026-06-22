@@ -8,6 +8,7 @@ import { TaskService } from '../../services/task/task.service';
 import { AuthService } from '../../services/auth/auth.service';
 import { DataService } from '../../services/data/data.service';
 import { Task } from '../../models/models';
+import { formatIst, istIsoDate, toIstWall } from '../../utils/ist-time';
 
 interface CalendarCell {
   date: Date;
@@ -89,26 +90,24 @@ export class CalendarComponent implements OnInit, OnDestroy {
   }
 
   private buildMonth(): void {
-    const year = this.cursor.getFullYear();
-    const month = this.cursor.getMonth();
-    const firstOfMonth = new Date(year, month, 1);
-    const startWeekday = (firstOfMonth.getDay() + 6) % 7; // Mon = 0
+    const cw = toIstWall(this.cursor);
+    const year = cw.year;
+    const month = cw.month; // 1-12
 
-    const start = new Date(firstOfMonth);
-    start.setDate(start.getDate() - startWeekday);
+    const firstOfMonth = this.fromIst(year, month, 1);
+    const startWeekday = (this.istWeekday(firstOfMonth) + 6) % 7; // Mon = 0
 
     const cells: CalendarCell[] = [];
     for (let i = 0; i < 42; i++) {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      d.setHours(0, 0, 0, 0);
-      const iso = this.toIso(d);
-
+      const offset = i - startWeekday;
+      const d = this.fromIst(year, month, 1 + offset);
+      const dw = toIstWall(d);
+      const iso = istIsoDate(d);
       cells.push({
         date: d,
         iso,
-        inMonth: d.getMonth() === month,
-        isToday: this.isSameDay(d, new Date()),
+        inMonth: dw.month === month,
+        isToday: iso === istIsoDate(new Date()),
         events: this.eventsOn(iso),
       });
     }
@@ -116,21 +115,19 @@ export class CalendarComponent implements OnInit, OnDestroy {
   }
 
   private buildWeek(): void {
-    const start = new Date(this.cursor);
-    const offset = (start.getDay() + 6) % 7;
-    start.setDate(start.getDate() - offset);
-    start.setHours(0, 0, 0, 0);
+    const cw = toIstWall(this.cursor);
+    const startOfDay = this.fromIst(cw.year, cw.month, cw.day);
+    const offset = (this.istWeekday(startOfDay) + 6) % 7;
 
     const cells: CalendarCell[] = [];
     for (let i = 0; i < 7; i++) {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      const iso = this.toIso(d);
+      const d = this.fromIst(cw.year, cw.month, cw.day - offset + i);
+      const iso = istIsoDate(d);
       cells.push({
         date: d,
         iso,
         inMonth: true,
-        isToday: this.isSameDay(d, new Date()),
+        isToday: iso === istIsoDate(new Date()),
         events: this.eventsOn(iso),
       });
     }
@@ -145,31 +142,25 @@ export class CalendarComponent implements OnInit, OnDestroy {
   }
 
   prev(): void {
+    const cw = toIstWall(this.cursor);
     if (this.view === 'month') {
-      this.cursor = new Date(this.cursor.getFullYear(), this.cursor.getMonth() - 1, 1);
+      this.cursor = this.fromIst(cw.year, cw.month - 1, 1);
     } else if (this.view === 'week') {
-      const d = new Date(this.cursor);
-      d.setDate(d.getDate() - 7);
-      this.cursor = d;
+      this.cursor = this.fromIst(cw.year, cw.month, cw.day - 7);
     } else {
-      const d = new Date(this.cursor);
-      d.setDate(d.getDate() - 1);
-      this.cursor = d;
+      this.cursor = this.fromIst(cw.year, cw.month, cw.day - 1);
     }
     this.buildView();
   }
 
   next(): void {
+    const cw = toIstWall(this.cursor);
     if (this.view === 'month') {
-      this.cursor = new Date(this.cursor.getFullYear(), this.cursor.getMonth() + 1, 1);
+      this.cursor = this.fromIst(cw.year, cw.month + 1, 1);
     } else if (this.view === 'week') {
-      const d = new Date(this.cursor);
-      d.setDate(d.getDate() + 7);
-      this.cursor = d;
+      this.cursor = this.fromIst(cw.year, cw.month, cw.day + 7);
     } else {
-      const d = new Date(this.cursor);
-      d.setDate(d.getDate() + 1);
-      this.cursor = d;
+      this.cursor = this.fromIst(cw.year, cw.month, cw.day + 1);
     }
     this.buildView();
   }
@@ -189,7 +180,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
   selectTask(task: Task, ev?: Event): void {
     if (ev) ev.stopPropagation();
     this.selectedTask = task;
-    const iso = this.toIso(new Date(task.endDate));
+    const iso = istIsoDate(new Date(task.endDate));
     this.selectedDay = this.monthCells.find((c) => c.iso === iso) ||
       this.weekCells.find((c) => c.iso === iso) ||
       this.selectedDay;
@@ -200,12 +191,12 @@ export class CalendarComponent implements OnInit, OnDestroy {
   }
 
   addOnDay(cell: CalendarCell): void {
-    const iso = cell.iso || this.toIso(cell.date);
+    const iso = cell.iso || istIsoDate(cell.date);
     this.router.navigate(['/add-task'], { queryParams: { due: iso } });
   }
 
   toIsoCursor(): string {
-    return this.toIso(this.cursor);
+    return istIsoDate(this.cursor);
   }
 
   openTask(task: Task): void {
@@ -220,7 +211,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
 
   private eventsOn(iso: string): Task[] {
     return this.tasks
-      .filter((t) => this.toIso(new Date(t.endDate)) === iso)
+      .filter((t) => istIsoDate(new Date(t.endDate)) === iso)
       .filter((t) =>
         !this.searchText ||
         t.subject.toLowerCase().includes(this.searchText.toLowerCase())
@@ -232,13 +223,13 @@ export class CalendarComponent implements OnInit, OnDestroy {
   }
 
   todayEventsCount(): number {
-    const today = this.toIso(new Date());
-    return this.eventsOn(today).length;
+    return this.eventsOn(istIsoDate(new Date())).length;
   }
 
   upcomingThisMonth(): Task[] {
-    const start = new Date(this.cursor.getFullYear(), this.cursor.getMonth(), 1);
-    const end = new Date(this.cursor.getFullYear(), this.cursor.getMonth() + 1, 0);
+    const cw = toIstWall(this.cursor);
+    const start = this.fromIst(cw.year, cw.month, 1);
+    const end = this.fromIst(cw.year, cw.month + 1, 0, 23, 59, 59, 999);
     return this.tasks
       .filter((t) => {
         const d = new Date(t.endDate);
@@ -249,17 +240,14 @@ export class CalendarComponent implements OnInit, OnDestroy {
   }
 
   monthLabel(): string {
-    return this.cursor.toLocaleDateString(undefined, {
-      month: 'long',
-      year: 'numeric',
-    });
+    return formatIst(this.cursor, { month: 'long', year: 'numeric' });
   }
 
   weekLabel(): string {
     if (this.weekCells.length === 0) return '';
     const start = this.weekCells[0].date;
     const end = this.weekCells[6].date;
-    return `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    return `${formatIst(start, { month: 'short', day: 'numeric' })} – ${formatIst(end, { month: 'short', day: 'numeric', year: 'numeric' })}`;
   }
 
   priorityClass(priority: string): string {
@@ -284,16 +272,23 @@ export class CalendarComponent implements OnInit, OnDestroy {
     return p === 'High' ? 3 : p === 'Medium' ? 2 : 1;
   }
 
-  private toIso(d: Date): string {
-    const pad = (n: number) => (n < 10 ? '0' + n : n);
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  /** Wrap fromIstWall so this file can pass a 0-based or out-of-range
+   *  month/day and rely on Date.UTC's normalization. */
+  private fromIst(
+    year: number,
+    month: number,
+    day: number,
+    hours = 0,
+    minutes = 0,
+    seconds = 0,
+    ms = 0
+  ): Date {
+    const utcMs = Date.UTC(year, month - 1, day, hours, minutes, seconds, ms);
+    return new Date(utcMs - 5.5 * 60 * 60 * 1000);
   }
 
-  private isSameDay(a: Date, b: Date): boolean {
-    return (
-      a.getFullYear() === b.getFullYear() &&
-      a.getMonth() === b.getMonth() &&
-      a.getDate() === b.getDate()
-    );
+  private istWeekday(d: Date): number {
+    const shifted = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
+    return shifted.getUTCDay();
   }
 }
