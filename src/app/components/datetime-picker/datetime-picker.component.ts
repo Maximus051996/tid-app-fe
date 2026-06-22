@@ -539,10 +539,17 @@ export class DateTimePickerComponent implements ControlValueAccessor {
     return `${d.getFullYear()}-${this.pad(d.getMonth() + 1)}-${this.pad(d.getDate())}`;
   }
 
-  /** Emit format depending on includeTime. */
+  /**
+   * Always emit a fully-qualified ISO 8601 UTC string (e.g.
+   * `2026-06-22T15:00:00.000Z`). This way the backend stores the exact
+   * instant the user picked in their local timezone, and round-tripping
+   * back through `new Date(...)` produces the same wall-clock time the
+   * user sees in the picker. For date-only mode, emit `YYYY-MM-DD`.
+   */
   private formatForOutput(d: Date): string {
-    const base = `${d.getFullYear()}-${this.pad(d.getMonth() + 1)}-${this.pad(d.getDate())}`;
-    if (!this.includeTime) return base;
-    return `${base}T${this.pad(d.getHours())}:${this.pad(d.getMinutes())}`;
+    if (!this.includeTime) {
+      return `${d.getFullYear()}-${this.pad(d.getMonth() + 1)}-${this.pad(d.getDate())}`;
+    }
+    return d.toISOString();
   }
 }

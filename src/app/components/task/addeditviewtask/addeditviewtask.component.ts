@@ -75,9 +75,15 @@ export class AddeditviewtaskComponent implements OnInit, OnDestroy {
       .subscribe((q) => {
         const due = q.get('due');
         if (due && !this.taskId) {
-          const start = `${due}T09:00`;
-          const end = `${due}T17:00`;
-          this.taskForm.patchValue({ startDate: start, endDate: end });
+          const [y, m, d] = due.split('-').map(Number);
+          // Build the prefill in the user's local timezone (9:00 → 17:00),
+          // then emit the picker's ISO format so timezone never gets lost.
+          const start = new Date(y, (m ?? 1) - 1, d ?? 1, 9, 0, 0, 0);
+          const end = new Date(y, (m ?? 1) - 1, d ?? 1, 17, 0, 0, 0);
+          this.taskForm.patchValue({
+            startDate: start.toISOString(),
+            endDate: end.toISOString(),
+          });
         }
       });
   }
@@ -202,8 +208,11 @@ export class AddeditviewtaskComponent implements OnInit, OnDestroy {
               subject: task.subject,
               description: task.description,
               priority: task.priority,
-              startDate: this.formatDateToInput(new Date(task.startDate)),
-              endDate: this.formatDateToInput(new Date(task.endDate)),
+              // Pass the ISO string straight through — the picker parses it
+              // with `new Date(...)` and renders the user's local wall-clock
+              // time. Round-trips cleanly across timezones.
+              startDate: task.startDate,
+              endDate: task.endDate,
               isRemainder: task.isRemainder,
               isDeleted: task.isDeleted,
               taskStatus: task.taskStatus,
@@ -237,16 +246,6 @@ export class AddeditviewtaskComponent implements OnInit, OnDestroy {
 
   onCancel() {
     this.router.navigate(['/taskinfo']);
-  }
-
-  formatDateToInput(date: Date | null): string {
-    if (!date || isNaN(date.getTime())) {
-      return '';
-    }
-    const pad = (n: number) => (n < 10 ? '0' + n : n);
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-      date.getDate()
-    )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
 
   get subtasks(): FormArray {
